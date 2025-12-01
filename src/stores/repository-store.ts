@@ -1,3 +1,5 @@
+import { join } from '@tauri-apps/api/path';
+import { exists } from '@tauri-apps/plugin-fs';
 import { toast } from 'sonner';
 import { create } from 'zustand';
 import { logger } from '@/lib/logger';
@@ -235,6 +237,23 @@ export const useRepositoryStore = create<RepositoryStore>((set, get) => ({
               logger.error('Failed to index project:', error);
               set({ loadingPhase: 'complete', indexingProgress: null });
             });
+
+          // Check if it's a Git repository
+          try {
+            const gitDir = await join(path, '.git');
+            const isGitRepo = await exists(gitDir);
+
+            if (!isGitRepo) {
+              toast.warning(
+                'Consider using Git to manage this project for tracking and recovering file changes',
+                {
+                  duration: 5000,
+                }
+              );
+            }
+          } catch (gitCheckError) {
+            logger.debug('Failed to check if repository is Git:', gitCheckError);
+          }
 
           toast.success('Repository opened successfully');
         } catch (error) {

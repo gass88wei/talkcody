@@ -164,6 +164,119 @@ describe('bashTool', () => {
     expect(result.message).toContain('Command blocked');
   });
 
+  // New tests for enhanced dangerous command detection
+  describe('enhanced dangerous command detection', () => {
+    it('should block rm -rf . (current directory)', async () => {
+      if (!bashTool.execute) {
+        throw new Error('bashTool.execute is not defined');
+      }
+      const result = (await bashTool.execute({
+        command: 'rm -rf .',
+      })) as BashResult;
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('Command blocked');
+    });
+
+    it('should block rm -r with relative path', async () => {
+      if (!bashTool.execute) {
+        throw new Error('bashTool.execute is not defined');
+      }
+      const result = (await bashTool.execute({
+        command: 'rm -r folder',
+      })) as BashResult;
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('Command blocked');
+    });
+
+    it('should block rm with wildcards', async () => {
+      if (!bashTool.execute) {
+        throw new Error('bashTool.execute is not defined');
+      }
+      const result = (await bashTool.execute({
+        command: 'rm *.txt',
+      })) as BashResult;
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('Command blocked');
+    });
+
+    it('should block find with -delete', async () => {
+      if (!bashTool.execute) {
+        throw new Error('bashTool.execute is not defined');
+      }
+      const result = (await bashTool.execute({
+        command: 'find . -name "*.log" -delete',
+      })) as BashResult;
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('Command blocked');
+    });
+
+    it('should block git clean -fd', async () => {
+      if (!bashTool.execute) {
+        throw new Error('bashTool.execute is not defined');
+      }
+      const result = (await bashTool.execute({
+        command: 'git clean -fd',
+      })) as BashResult;
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('Command blocked');
+    });
+
+    it('should block git reset --hard', async () => {
+      if (!bashTool.execute) {
+        throw new Error('bashTool.execute is not defined');
+      }
+      const result = (await bashTool.execute({
+        command: 'git reset --hard',
+      })) as BashResult;
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('Command blocked');
+    });
+
+    it('should block unlink command', async () => {
+      if (!bashTool.execute) {
+        throw new Error('bashTool.execute is not defined');
+      }
+      const result = (await bashTool.execute({
+        command: 'unlink file.txt',
+      })) as BashResult;
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('Command blocked');
+    });
+
+    it('should block shred command', async () => {
+      if (!bashTool.execute) {
+        throw new Error('bashTool.execute is not defined');
+      }
+      const result = (await bashTool.execute({
+        command: 'shred -u secret.txt',
+      })) as BashResult;
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('Command blocked');
+    });
+
+    it('should block find -exec rm', async () => {
+      if (!bashTool.execute) {
+        throw new Error('bashTool.execute is not defined');
+      }
+      const result = (await bashTool.execute({
+        command: 'find . -type f -exec rm {} \\;',
+      })) as BashResult;
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('Command blocked');
+    });
+
+    it('should block mv to /dev/null', async () => {
+      if (!bashTool.execute) {
+        throw new Error('bashTool.execute is not defined');
+      }
+      const result = (await bashTool.execute({
+        command: 'mv important.txt /dev/null',
+      })) as BashResult;
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('Command blocked');
+    });
+  });
+
   describe('idle timeout handling', () => {
     it('should return success when command completes with idle timeout (dev server scenario)', async () => {
       // Simulate a dev server that outputs and then becomes idle

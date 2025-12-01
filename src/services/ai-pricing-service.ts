@@ -12,7 +12,18 @@ export interface TokenUsage {
 
 class AIPricingService {
   private getModel(modelId: string) {
-    return MODEL_CONFIGS[modelId];
+    // Try direct lookup first
+    if (MODEL_CONFIGS[modelId]) {
+      return MODEL_CONFIGS[modelId];
+    }
+
+    // Try without @provider suffix (e.g., "claude-sonnet-4.5@openRouter" -> "claude-sonnet-4.5")
+    const baseModelId = modelId.includes('@') ? modelId.split('@')[0] : modelId;
+    if (baseModelId && MODEL_CONFIGS[baseModelId]) {
+      return MODEL_CONFIGS[baseModelId];
+    }
+
+    return undefined;
   }
 
   calculateCost(modelId: string, usage: TokenUsage): number {

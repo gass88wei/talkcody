@@ -1,3 +1,4 @@
+use ignore::gitignore::{Gitignore, GitignoreBuilder};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
@@ -62,6 +63,16 @@ impl DirectoryTreeBuilder {
         path.to_string_lossy().replace('\\', "/")
     }
 
+    /// Build a gitignore matcher for the given root path
+    fn build_gitignore_matcher(root_path: &Path) -> Option<Gitignore> {
+        let mut builder = GitignoreBuilder::new(root_path);
+        let gitignore_path = root_path.join(".gitignore");
+        if gitignore_path.exists() {
+            let _ = builder.add(&gitignore_path);
+        }
+        builder.build().ok()
+    }
+
     /// Build directory tree with immediate first-level loading
     pub fn build_directory_tree_fast(
         &self,
@@ -85,9 +96,12 @@ impl DirectoryTreeBuilder {
             }
         }
 
+        // Build gitignore matcher
+        let gitignore = Self::build_gitignore_matcher(root);
+
         // Build tree with immediate depth loading
         let node = self
-            .build_node_recursive(root, 0, max_immediate_depth, now)?;
+            .build_node_recursive(root, 0, max_immediate_depth, now, &gitignore)?;
 
         // Cache the result
         if let Ok(mut cache) = self.cache.lock() {
@@ -109,6 +123,7 @@ impl DirectoryTreeBuilder {
         current_depth: usize,
         max_depth: usize,
         timestamp: u64,
+        gitignore: &Option<Gitignore>,
     ) -> Result<FileNode, String> {
         let name = path
             .file_name()
@@ -118,6 +133,12 @@ impl DirectoryTreeBuilder {
 
         let path_str = Self::normalize_path(path);
         let (modified_time, size) = Self::get_file_metadata(path).unwrap_or((timestamp, 0));
+
+        // Check if this path is git-ignored
+        let is_ignored = gitignore
+            .as_ref()
+            .map(|gi| gi.matched(path, path.is_dir()).is_ignore())
+            .unwrap_or(false);
 
         if path.is_file() {
             return Ok(FileNode {
@@ -129,7 +150,7 @@ impl DirectoryTreeBuilder {
                 has_children: None,
                 modified_time: Some(modified_time),
                 size: Some(size),
-                is_git_ignored: Some(false),
+                is_git_ignored: Some(is_ignored),
             });
         }
 
@@ -164,7 +185,7 @@ impl DirectoryTreeBuilder {
                 has_children: Some(has_children),
                 modified_time: Some(modified_time),
                 size: Some(size),
-                is_git_ignored: Some(false),
+                is_git_ignored: Some(is_ignored),
             });
         }
 
@@ -180,7 +201,7 @@ impl DirectoryTreeBuilder {
                 continue;
             }
 
-            match self.build_node_recursive(&entry_path, current_depth + 1, max_depth, timestamp) {
+            match self.build_node_recursive(&entry_path, current_depth + 1, max_depth, timestamp, gitignore) {
                 Ok(child) => children.push(child),
                 Err(_) => {} // Skip failed entries
             }
@@ -204,8 +225,22 @@ impl DirectoryTreeBuilder {
             has_children: None,
             modified_time: Some(modified_time),
             size: Some(size),
-            is_git_ignored: Some(false),
+            is_git_ignored: Some(is_ignored),
         })
+    }
+
+    /// Find the git root directory by looking for .git folder
+    fn find_git_root(path: &Path) -> Option<&Path> {
+        let mut current = path;
+        loop {
+            if current.join(".git").exists() {
+                return Some(current);
+            }
+            match current.parent() {
+                Some(parent) => current = parent,
+                None => return None,
+            }
+        }
     }
 
     /// Load children for a lazy-loaded directory
@@ -228,6 +263,10 @@ impl DirectoryTreeBuilder {
                 }
             }
         }
+
+        // Build gitignore matcher from git root
+        let gitignore = Self::find_git_root(path)
+            .and_then(|root| Self::build_gitignore_matcher(root));
 
         // Build children
         let entries = match std::fs::read_dir(path) {
@@ -256,7 +295,7 @@ impl DirectoryTreeBuilder {
                 continue;
             }
 
-            match self.build_node_recursive(&entry_path, 1, 2, now) {
+            match self.build_node_recursive(&entry_path, 1, 2, now, &gitignore) {
                 Ok(child) => children.push(child),
                 Err(_) => {} // Skip failed entries
             }

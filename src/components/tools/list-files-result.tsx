@@ -14,13 +14,7 @@ export function ListFilesResult({ path, result }: ListFilesResultProps) {
 
   return (
     <div className="space-y-3">
-      <GenericToolResult
-        type="list"
-        operation="list"
-        success={true}
-        target={path}
-        message={fileCountText}
-      />
+      <GenericToolResult operation="list" success={true} target={path} message={fileCountText} />
 
       {/* Show file listing if available */}
       {result && (

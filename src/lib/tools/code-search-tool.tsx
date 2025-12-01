@@ -121,7 +121,6 @@ Use this to find code patterns, function definitions, variable usage, or any tex
     if (!output.success) {
       return (
         <GenericToolResult
-          type="search"
           operation="search"
           success={false}
           target={pattern}
@@ -137,7 +136,6 @@ Use this to find code patterns, function definitions, variable usage, or any tex
     if (isNoMatches) {
       return (
         <GenericToolResult
-          type="search"
           operation="search"
           success={true}
           target={targetName}
@@ -146,7 +144,6 @@ Use this to find code patterns, function definitions, variable usage, or any tex
       );
     }
 
-    // For successful searches, show the generic result first, then detailed results
     return (
       <div className="space-y-3">
         <div className="border rounded-lg p-3 bg-white dark:bg-gray-900 dark:border-gray-700 w-full overflow-hidden">

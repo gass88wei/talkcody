@@ -321,6 +321,39 @@ export class RepositoryService {
     }
   }
 
+  // Move a file or directory to a new location (supports cross-directory moves)
+  async moveFile(sourcePath: string, destinationPath: string): Promise<void> {
+    try {
+      // Check if source exists
+      if (!(await exists(sourcePath))) {
+        throw new Error('Source file/directory does not exist');
+      }
+
+      // Check if destination already exists
+      if (await exists(destinationPath)) {
+        throw new Error(`A file or directory already exists at "${destinationPath}"`);
+      }
+
+      await rename(sourcePath, destinationPath);
+
+      // Update cache
+      if (this.fileCache.has(sourcePath)) {
+        const cachedData = this.fileCache.get(sourcePath);
+        this.fileCache.delete(sourcePath);
+        if (cachedData) {
+          this.fileCache.set(destinationPath, cachedData);
+        }
+      }
+
+      logger.info('File/directory moved:', sourcePath, '->', destinationPath);
+    } catch (error) {
+      logger.error('Error moving file/directory:', error);
+      throw new Error(
+        `Failed to move: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
   // Clear file cache for testing purposes
   clearCache(): void {
     this.fileCache.clear();

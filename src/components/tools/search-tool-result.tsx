@@ -57,7 +57,6 @@ export function SearchToolResult({ results, query }: SearchToolResultProps) {
     return (
       <>
         <GenericToolResult
-          type="search"
           operation="search"
           success={false}
           target={query}

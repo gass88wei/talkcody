@@ -21,6 +21,7 @@ export interface DashboardStats {
   avgSessionDurationMinutes: number;
   topCountries: Array<{ country: string; count: number }>;
   topVersions: Array<{ version: string; count: number }>;
+  topOS: Array<{ os: string; count: number }>;
   dailyActiveHistory: Array<{ date: string; count: number }>;
 }
 
@@ -50,6 +51,7 @@ export class AnalyticsService {
       avgSessionDurationMinutes,
       topCountries,
       topVersions,
+      topOS,
       dailyActiveHistory,
     ] = await Promise.all([
       this.getDAU(todayStart).catch((e) => {
@@ -73,6 +75,10 @@ export class AnalyticsService {
         console.error('getTopVersions error:', e);
         return [];
       }),
+      this.getTopOS(thirtyDaysAgo).catch((e) => {
+        console.error('getTopOS error:', e);
+        return [];
+      }),
       this.getDailyActiveHistory(thirtyDaysAgo),
     ]);
 
@@ -83,6 +89,7 @@ export class AnalyticsService {
       avgSessionDurationMinutes,
       topCountries,
       topVersions,
+      topOS,
       dailyActiveHistory,
     };
   }
@@ -173,6 +180,24 @@ export class AnalyticsService {
       return result.rows as Array<{ version: string; count: number }>;
     } catch (error) {
       console.error('getTopVersions error:', error);
+      return [];
+    }
+  }
+
+  private async getTopOS(since: number): Promise<Array<{ os: string; count: number }>> {
+    try {
+      const { client } = getDb();
+      const result = await client.execute({
+        sql: `SELECT os_name as os, COUNT(DISTINCT device_id) as count
+          FROM analytics_events
+          WHERE created_at >= ? AND os_name IS NOT NULL
+          GROUP BY os_name
+          ORDER BY count DESC`,
+        args: [since],
+      });
+      return result.rows as Array<{ os: string; count: number }>;
+    } catch (error) {
+      console.error('getTopOS error:', error);
       return [];
     }
   }

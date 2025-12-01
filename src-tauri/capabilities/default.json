@@ -32,6 +32,16 @@
         }
       ]
     },
+    {
+      "identifier": "fs:scope",
+      "allow": [
+        {
+          "path": "**"
+        }
+      ]
+    },
+    "fs:allow-read",
+    "fs:allow-write",
     "shell:default",
     "shell:allow-spawn",
     "shell:allow-open",

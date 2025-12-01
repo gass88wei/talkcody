@@ -16,13 +16,7 @@ export function GlobResult({ pattern, path, result }: GlobResultProps) {
 
   return (
     <div className="space-y-3">
-      <GenericToolResult
-        type="glob"
-        operation="find"
-        success={true}
-        target={target}
-        message={fileCountText}
-      />
+      <GenericToolResult operation="find" success={true} target={target} message={fileCountText} />
 
       {/* Show file listing if available */}
       {result && (

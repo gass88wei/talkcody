@@ -26,12 +26,36 @@ export interface BashResult {
 
 // List of dangerous command patterns that should be blocked
 const DANGEROUS_PATTERNS = [
-  // File system destruction
+  // File system destruction - Enhanced rm detection (not limited to absolute paths)
+  /\brm\s+-[rf]/, // rm -r, rm -f, rm -rf (any path)
+  /\brm\s+.*\*/, // rm with wildcards
+  /\brm\s+\./, // rm . (current directory paths)
   /rm\s+.*-[rf]+.*\//, // rm with recursive or force flags on directories
   /rm\s+.*--recursive/,
   /rm\s+.*--force/,
   /rm\s+-[rf]{2}/, // rm -rf or rm -fr
   /rmdir\s+.*-.*r/, // rmdir with recursive
+
+  // Other file deletion commands
+  /\bunlink\s+/,
+  /\bshred\s+/,
+  /\btruncate\s+.*-s\s*0/, // truncate to zero
+
+  // find + delete combinations
+  /\bfind\s+.*-delete/,
+  /\bfind\s+.*-exec\s+rm/,
+  /\bfind\s+.*\|\s*xargs\s+rm/,
+
+  // File content clearing
+  /^>\s*\S+/, // > file (clear file)
+  /cat\s+\/dev\/null\s*>/, // cat /dev/null > file
+
+  // Git dangerous operations
+  /\bgit\s+clean\s+-[fd]/,
+  /\bgit\s+reset\s+--hard/,
+
+  // mv to dangerous locations
+  /\bmv\s+.*\/dev\/null/,
 
   // Format commands
   /mkfs\./,
@@ -111,6 +135,9 @@ const DANGEROUS_COMMANDS = [
   'poweroff',
   'su',
   'sudo su',
+  'unlink',
+  'shred',
+  'truncate',
 ];
 
 /**

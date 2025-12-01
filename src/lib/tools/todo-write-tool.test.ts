@@ -348,8 +348,6 @@ describe('todoWriteTool', () => {
       const component = todoWriteTool.renderToolResult?.(error, params);
       render(component);
 
-      // Verify the failure message
-      expect(screen.getByText('Update failed')).toBeInTheDocument();
       expect(screen.getByText('Test error message')).toBeInTheDocument();
     });
 

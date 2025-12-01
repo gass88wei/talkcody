@@ -12,8 +12,25 @@ interface GlobalFileSearchProps {
   isOpen: boolean;
   onClose: () => void;
   onSearch: (query: string) => Promise<FileNode[]>;
-  onFileSelect: (filePath: string) => void;
+  onFileSelect: (filePath: string, lineNumber?: number) => void;
   repositoryPath?: string | null;
+}
+
+/**
+ * Parse file query to extract filename and optional line number
+ * Supports format: filename:lineNumber (e.g., "test.cpp:82")
+ */
+function parseFileQuery(input: string): { query: string; lineNumber?: number } {
+  const trimmed = input.trim();
+  // Match pattern: anything followed by :number at the end
+  const match = trimmed.match(/^(.+):(\d+)$/);
+  if (match && match[1] && match[2]) {
+    return {
+      query: match[1],
+      lineNumber: parseInt(match[2], 10),
+    };
+  }
+  return { query: trimmed };
 }
 
 export function GlobalFileSearch({
@@ -27,6 +44,7 @@ export function GlobalFileSearch({
   const [results, setResults] = useState<FileNode[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [parsedLineNumber, setParsedLineNumber] = useState<number | undefined>();
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -42,10 +60,10 @@ export function GlobalFileSearch({
 
   const handleFileSelect = useCallback(
     (file: FileNode) => {
-      onFileSelect(file.path);
+      onFileSelect(file.path, parsedLineNumber);
       onClose();
     },
-    [onFileSelect, onClose]
+    [onFileSelect, onClose, parsedLineNumber]
   );
 
   // Reset state when dialog opens/closes
@@ -54,6 +72,7 @@ export function GlobalFileSearch({
       setQuery('');
       setResults([]);
       setSelectedIndex(0);
+      setParsedLineNumber(undefined);
       // Focus the input when dialog opens
       setTimeout(() => {
         inputRef.current?.focus();
@@ -66,7 +85,11 @@ export function GlobalFileSearch({
   // Search files with debouncing
   useEffect(() => {
     const searchFiles = async () => {
-      if (!query.trim()) {
+      // Parse the query to extract filename and optional line number
+      const { query: searchQuery, lineNumber } = parseFileQuery(query);
+      setParsedLineNumber(lineNumber);
+
+      if (!searchQuery.trim()) {
         setResults([]);
         setSelectedIndex(0);
         return;
@@ -76,7 +99,7 @@ export function GlobalFileSearch({
       try {
         // Get all search results from the high-performance Rust backend
         // The backend now handles all keyword matching, filtering, and scoring
-        const searchResults = await onSearch(query);
+        const searchResults = await onSearch(searchQuery);
 
         // Filter out directories if needed (most file searches should only show files)
         const fileResults = searchResults.filter((file) => !file.is_directory);

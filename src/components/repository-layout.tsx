@@ -1,3 +1,4 @@
+import { Maximize2, Minimize2 } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -10,7 +11,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useConversations } from '@/hooks/use-conversations';
 import { useGlobalFileSearch } from '@/hooks/use-global-file-search';
 import { useGlobalShortcuts } from '@/hooks/use-global-shortcuts';
@@ -49,6 +52,14 @@ export function RepositoryLayout() {
 
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
 
+  // Fullscreen panel state
+  type FullscreenPanel = 'none' | 'editor' | 'terminal' | 'chat';
+  const [fullscreenPanel, setFullscreenPanel] = useState<FullscreenPanel>('none');
+
+  const toggleFullscreen = (panel: 'editor' | 'terminal' | 'chat') => {
+    setFullscreenPanel((prev) => (prev === panel ? 'none' : panel));
+  };
+
   // Terminal state
   const isTerminalVisible = useTerminalStore((state) => state.isTerminalVisible);
   const toggleTerminalVisible = useTerminalStore((state) => state.toggleTerminalVisible);
@@ -61,7 +72,6 @@ export function RepositoryLayout() {
   const openFiles = useRepositoryStore((state) => state.openFiles);
   const activeFileIndex = useRepositoryStore((state) => state.activeFileIndex);
   const isLoading = useRepositoryStore((state) => state.isLoading);
-  const _error = useRepositoryStore((state) => state.error);
   const expandedPaths = useRepositoryStore((state) => state.expandedPaths);
   const searchFiles = useRepositoryStore((state) => state.searchFiles);
   const selectRepository = useRepositoryStore((state) => state.selectRepository);
@@ -381,6 +391,18 @@ export function RepositoryLayout() {
 
   const hasOpenFiles = openFiles.length > 0;
 
+  // Fullscreen panel display logic
+  const showFileTree = fullscreenPanel === 'none';
+  const showMiddlePanel =
+    fullscreenPanel === 'none' || fullscreenPanel === 'editor' || fullscreenPanel === 'terminal';
+  const showChatPanel = fullscreenPanel === 'none' || fullscreenPanel === 'chat';
+  const showEditor = fullscreenPanel !== 'terminal' && fullscreenPanel !== 'chat';
+  const showTerminal =
+    isTerminalVisible && fullscreenPanel !== 'editor' && fullscreenPanel !== 'chat';
+  const isEditorFullscreen = fullscreenPanel === 'editor';
+  const isTerminalFullscreen = fullscreenPanel === 'terminal';
+  const isChatFullscreen = fullscreenPanel === 'chat';
+
   return (
     <>
       <GlobalFileSearch
@@ -423,147 +445,206 @@ export function RepositoryLayout() {
 
         <div className="flex-1 overflow-hidden">
           <ResizablePanelGroup
-            key={`layout-${hasOpenFiles}-${isTerminalVisible}`}
+            key={`layout-${hasOpenFiles}-${isTerminalVisible}-${fullscreenPanel}`}
             className="h-full"
             direction="horizontal"
           >
-            {/* File Tree Panel */}
-            <ResizablePanel
-              id={fileTreePanelId}
-              order={1}
-              className="border-r bg-white dark:bg-gray-950"
-              defaultSize={20}
-              maxSize={40}
-              minSize={10}
-            >
-              <div className="h-full overflow-auto">
-                <FileTree
-                  key={rootPath}
-                  fileTree={fileTree}
-                  repositoryPath={rootPath}
-                  expandedPaths={expandedPaths}
-                  onFileCreate={handleFileCreate}
-                  onFileDelete={handleFileDelete}
-                  onFileRename={handleFileRename}
-                  onFileSelect={selectFile}
-                  onRefresh={refreshFileTree}
-                  selectedFile={selectedFilePath}
-                  onLoadChildren={loadDirectoryChildren}
-                  onToggleExpansion={toggleExpansion}
-                />
-              </div>
-            </ResizablePanel>
+            {/* File Tree Panel - Hidden when any panel is fullscreen */}
+            {showFileTree && (
+              <>
+                <ResizablePanel
+                  id={fileTreePanelId}
+                  order={1}
+                  className="border-r bg-white dark:bg-gray-950"
+                  defaultSize={20}
+                  maxSize={40}
+                  minSize={10}
+                >
+                  <div className="h-full overflow-auto">
+                    <FileTree
+                      key={rootPath}
+                      fileTree={fileTree}
+                      repositoryPath={rootPath}
+                      expandedPaths={expandedPaths}
+                      onFileCreate={handleFileCreate}
+                      onFileDelete={handleFileDelete}
+                      onFileRename={handleFileRename}
+                      onFileSelect={selectFile}
+                      onRefresh={refreshFileTree}
+                      selectedFile={selectedFilePath}
+                      onLoadChildren={loadDirectoryChildren}
+                      onToggleExpansion={toggleExpansion}
+                    />
+                  </div>
+                </ResizablePanel>
 
-            <ResizableHandle withHandle />
+                <ResizableHandle withHandle />
+              </>
+            )}
 
             {/* Middle Panel: Contains file editor and/or terminal */}
-            <ResizablePanel
-              id={editorAreaPanelId}
-              order={2}
-              className="border-r"
-              defaultSize={hasOpenFiles || isTerminalVisible ? 40 : 0}
-              minSize={hasOpenFiles || isTerminalVisible ? 20 : 0}
-              maxSize={hasOpenFiles || isTerminalVisible ? 100 : 0}
-            >
-              <ResizablePanelGroup direction="vertical">
-                {/* File Editor Panel - Only show if files are open */}
-                {hasOpenFiles && (
-                  <>
-                    <ResizablePanel
-                      id={fileEditorPanelId}
-                      order={1}
-                      defaultSize={isTerminalVisible ? 60 : 100}
-                      minSize={20}
-                    >
-                      <div className="flex h-full flex-col">
-                        {/* File Tabs */}
-                        <FileTabs
-                          activeFileIndex={activeFileIndex}
-                          onTabClose={closeTab}
-                          onCloseOthers={closeOthers}
-                          onCloseAll={closeAllFiles}
-                          onCopyPath={handleCopyPath}
-                          onCopyRelativePath={handleCopyRelativePath}
-                          onAddFileToChat={handleAddFileToChat}
-                          onTabSelect={switchToTab}
-                          openFiles={openFiles}
-                          rootPath={rootPath}
-                        />
+            {showMiddlePanel && (hasOpenFiles || isTerminalVisible) && (
+              <>
+                <ResizablePanel
+                  id={editorAreaPanelId}
+                  order={2}
+                  className={showChatPanel ? 'border-r' : ''}
+                  defaultSize={isEditorFullscreen || isTerminalFullscreen ? 100 : 40}
+                  minSize={20}
+                  maxSize={100}
+                >
+                  <ResizablePanelGroup direction="vertical">
+                    {/* File Editor Panel - Only show if files are open and not terminal/chat fullscreen */}
+                    {hasOpenFiles && showEditor && (
+                      <>
+                        <ResizablePanel
+                          id={fileEditorPanelId}
+                          order={1}
+                          defaultSize={isEditorFullscreen ? 100 : showTerminal ? 60 : 100}
+                          minSize={20}
+                        >
+                          <div className="flex h-full flex-col">
+                            {/* File Tabs with Fullscreen Button */}
+                            <div className="flex items-center border-b">
+                              <div className="flex-1 overflow-hidden">
+                                <FileTabs
+                                  activeFileIndex={activeFileIndex}
+                                  onTabClose={closeTab}
+                                  onCloseOthers={closeOthers}
+                                  onCloseAll={closeAllFiles}
+                                  onCopyPath={handleCopyPath}
+                                  onCopyRelativePath={handleCopyRelativePath}
+                                  onAddFileToChat={handleAddFileToChat}
+                                  onTabSelect={switchToTab}
+                                  openFiles={openFiles}
+                                  rootPath={rootPath}
+                                />
+                              </div>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 mr-1"
+                                    onClick={() => toggleFullscreen('editor')}
+                                  >
+                                    {isEditorFullscreen ? (
+                                      <Minimize2 className="h-3.5 w-3.5" />
+                                    ) : (
+                                      <Maximize2 className="h-3.5 w-3.5" />
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom">
+                                  {isEditorFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
 
-                        {/* File Editor */}
-                        <div className="flex-1 overflow-auto">
-                          <FileEditor
-                            error={currentFile?.error || null}
-                            fileContent={currentFile?.content || null}
-                            filePath={currentFile?.path || null}
-                            hasUnsavedChanges={currentFile?.hasUnsavedChanges}
-                            isLoading={currentFile?.isLoading ?? false}
-                            lineNumber={currentFile?.lineNumber}
-                            onContentChange={(content) => {
-                              if (currentFile) {
-                                updateFileContent(currentFile.path, content, true);
-                              }
-                            }}
-                            onGlobalSearch={() => setIsContentSearchVisible((prev) => !prev)}
-                          />
-                        </div>
-                      </div>
-                    </ResizablePanel>
+                            {/* File Editor */}
+                            <div className="flex-1 overflow-auto">
+                              <FileEditor
+                                error={currentFile?.error || null}
+                                fileContent={currentFile?.content || null}
+                                filePath={currentFile?.path || null}
+                                hasUnsavedChanges={currentFile?.hasUnsavedChanges}
+                                isLoading={currentFile?.isLoading ?? false}
+                                lineNumber={currentFile?.lineNumber}
+                                onContentChange={(content) => {
+                                  if (currentFile) {
+                                    updateFileContent(currentFile.path, content, true);
+                                  }
+                                }}
+                                onGlobalSearch={() => setIsContentSearchVisible((prev) => !prev)}
+                              />
+                            </div>
+                          </div>
+                        </ResizablePanel>
 
-                    {/* Resize handle between editor and terminal */}
-                    {isTerminalVisible && <ResizableHandle withHandle />}
-                  </>
-                )}
+                        {/* Resize handle between editor and terminal */}
+                        {showTerminal && <ResizableHandle withHandle />}
+                      </>
+                    )}
 
-                {/* Terminal Panel - Can be shown independently */}
-                {isTerminalVisible && (
-                  <ResizablePanel
-                    id={terminalPanelId}
-                    order={2}
-                    defaultSize={hasOpenFiles ? 40 : 100}
-                    minSize={15}
-                    maxSize={hasOpenFiles ? 80 : 100}
-                  >
-                    <TerminalPanel
-                      onCopyToChat={(content) => {
-                        if (chatBoxRef.current?.appendToInput) {
-                          chatBoxRef.current.appendToInput(`\n\n${content}`);
+                    {/* Terminal Panel - Can be shown independently */}
+                    {showTerminal && (
+                      <ResizablePanel
+                        id={terminalPanelId}
+                        order={2}
+                        defaultSize={
+                          isTerminalFullscreen ? 100 : hasOpenFiles && showEditor ? 40 : 100
                         }
-                      }}
-                      onClose={() => toggleTerminalVisible()}
-                    />
-                  </ResizablePanel>
-                )}
-              </ResizablePanelGroup>
-            </ResizablePanel>
+                        minSize={15}
+                        maxSize={100}
+                      >
+                        <TerminalPanel
+                          onCopyToChat={(content) => {
+                            if (chatBoxRef.current?.appendToInput) {
+                              chatBoxRef.current.appendToInput(`\n\n${content}`);
+                            }
+                          }}
+                          onClose={() => toggleTerminalVisible()}
+                          onToggleFullscreen={() => toggleFullscreen('terminal')}
+                          isFullscreen={isTerminalFullscreen}
+                        />
+                      </ResizablePanel>
+                    )}
+                  </ResizablePanelGroup>
+                </ResizablePanel>
 
-            <ResizableHandle withHandle />
+                {showChatPanel && <ResizableHandle withHandle />}
+              </>
+            )}
 
             {/* Chat Panel */}
-            <ResizablePanel
-              id={mainChatPanelId}
-              order={3}
-              className="bg-white dark:bg-gray-950"
-              defaultSize={hasOpenFiles || isTerminalVisible ? 40 : 80}
-              maxSize={100}
-              minSize={20}
-            >
-              <div className="flex h-full flex-col">
-                <div className="flex-1 overflow-hidden">
-                  <ChatBox
-                    ref={chatBoxRef}
-                    conversationId={currentConversationId}
-                    fileContent={currentFile?.content || null}
-                    onConversationStart={handleConversationStart}
-                    onDiffApplied={handleDiffApplied}
-                    repositoryPath={rootPath}
-                    selectedFile={currentFile?.path || null}
-                    onFileSelect={selectFile}
-                    onAddFileToChat={handleAddFileToChat}
-                  />
+            {showChatPanel && (
+              <ResizablePanel
+                id={mainChatPanelId}
+                order={3}
+                className="bg-white dark:bg-gray-950"
+                defaultSize={isChatFullscreen ? 100 : hasOpenFiles || isTerminalVisible ? 40 : 80}
+                maxSize={100}
+                minSize={20}
+              >
+                <div className="flex h-full flex-col">
+                  {/* Chat Header with Fullscreen Button */}
+                  <div className="flex items-center justify-end border-b px-2 h-9 bg-muted/20">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => toggleFullscreen('chat')}
+                        >
+                          {isChatFullscreen ? (
+                            <Minimize2 className="h-3.5 w-3.5" />
+                          ) : (
+                            <Maximize2 className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        {isChatFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <ChatBox
+                      ref={chatBoxRef}
+                      conversationId={currentConversationId}
+                      fileContent={currentFile?.content || null}
+                      onConversationStart={handleConversationStart}
+                      onDiffApplied={handleDiffApplied}
+                      repositoryPath={rootPath}
+                      selectedFile={currentFile?.path || null}
+                      onFileSelect={selectFile}
+                      onAddFileToChat={handleAddFileToChat}
+                    />
+                  </div>
                 </div>
-              </div>
-            </ResizablePanel>
+              </ResizablePanel>
+            )}
           </ResizablePanelGroup>
         </div>
 

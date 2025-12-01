@@ -1,7 +1,9 @@
 // src/hooks/use-global-file-search.ts
 import { useCallback, useState } from 'react';
 
-export function useGlobalFileSearch(onFileSelect?: (filePath: string) => void) {
+export function useGlobalFileSearch(
+  onFileSelect?: (filePath: string, lineNumber?: number) => void
+) {
   const [isOpen, setIsOpen] = useState(false);
 
   const openSearch = useCallback(() => {
@@ -13,8 +15,8 @@ export function useGlobalFileSearch(onFileSelect?: (filePath: string) => void) {
   }, []);
 
   const handleFileSelect = useCallback(
-    (filePath: string) => {
-      onFileSelect?.(filePath);
+    (filePath: string, lineNumber?: number) => {
+      onFileSelect?.(filePath, lineNumber);
       setIsOpen(false);
     },
     [onFileSelect]

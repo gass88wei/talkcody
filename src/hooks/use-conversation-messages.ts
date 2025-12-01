@@ -5,6 +5,7 @@ import { useCallback, useState } from 'react';
 import { logger } from '@/lib/logger';
 import { mapStoredMessagesToUI, mapStoredToSimpleUIMessage } from '@/lib/message-mapper';
 import { databaseService } from '@/services/database-service';
+import { useConversationUsageStore } from '@/stores/conversation-usage-store';
 import { settingsManager } from '@/stores/settings-store';
 import type { MessageAttachment, UIMessage } from '@/types/agent';
 
@@ -137,6 +138,8 @@ export function useConversationMessages(): UseConversationMessagesReturn {
           inputToken,
           outputToken
         );
+        // Update store for real-time UI update
+        useConversationUsageStore.getState().addUsage(cost, inputToken, outputToken);
       } catch (err) {
         logger.error('Failed to update conversation usage:', err);
         setError('Failed to update conversation usage');

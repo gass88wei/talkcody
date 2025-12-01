@@ -9,7 +9,6 @@ import {
   File,
   FileText,
   Folder,
-  FolderOpen,
   Plus,
   RefreshCw,
   Scissors,
@@ -342,7 +341,7 @@ function FileTreeNode({
         }
 
         if (clipboardState.type === 'cut') {
-          await repositoryService.renameFile(sourcePath, targetPath);
+          await repositoryService.moveFile(sourcePath, targetPath);
           toast.success(`Moved ${fileName}`);
         } else {
           // Use the new copy method
@@ -453,21 +452,6 @@ function FileTreeNode({
               )
             ) : (
               <div className="mr-1 h-4 w-4" />
-            )}
-            {isExpanded ? (
-              <FolderOpen
-                className={cn(
-                  'mr-2 h-4 w-4 flex-shrink-0 text-blue-600',
-                  isGitIgnored && 'text-muted-foreground'
-                )}
-              />
-            ) : (
-              <Folder
-                className={cn(
-                  'mr-2 h-4 w-4 flex-shrink-0 text-blue-600',
-                  isGitIgnored && 'text-muted-foreground'
-                )}
-              />
             )}
           </>
         ) : (

@@ -49,7 +49,7 @@ class AgentRegistry {
     // Import all system agent classes
     const { PlannerAgent } = await import('./code-planner-agent');
     // const { CodingAgent } = await import('./coding-agent');
-    // const { CodeReviewAgent } = await import('./code-review-agent');
+    const { CodeReviewAgent } = await import('./code-review-agent');
     const { GeneralAgent } = await import('./general-agent');
     // const { WriterAgent } = await import('./writer-agent');
     const { ContextGathererAgent } = await import('./context-gatherer-agent');
@@ -63,7 +63,7 @@ class AgentRegistry {
     const systemAgents = [
       PlannerAgent.getDefinition(plannerTools),
       // CodingAgent.getDefinition(),
-      // CodeReviewAgent.getDefinition(),
+      CodeReviewAgent.getDefinition(),
       GeneralAgent.getDefinition(),
       // WriterAgent.getDefinition(),
       ContextGathererAgent.getDefinition(),

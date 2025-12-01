@@ -1,7 +1,7 @@
-import { Copy, MessageSquare, X } from 'lucide-react';
+import { Maximize2, Minimize2, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { logger } from '@/lib/logger';
 import { terminalService } from '@/services/terminal-service';
 import { useRepositoryStore } from '@/stores/repository-store';
@@ -12,9 +12,16 @@ import { TerminalTabs } from './terminal-tabs';
 interface TerminalPanelProps {
   onCopyToChat?: (content: string) => void;
   onClose?: () => void;
+  onToggleFullscreen?: () => void;
+  isFullscreen?: boolean;
 }
 
-export function TerminalPanel({ onCopyToChat, onClose }: TerminalPanelProps) {
+export function TerminalPanel({
+  onCopyToChat,
+  onClose,
+  onToggleFullscreen,
+  isFullscreen,
+}: TerminalPanelProps) {
   const activeSessionId = useTerminalStore((state) => state.activeSessionId);
   const sessions = useTerminalStore((state) => state.sessions);
   const rootPath = useRepositoryStore((state) => state.rootPath);
@@ -78,34 +85,36 @@ export function TerminalPanel({ onCopyToChat, onClose }: TerminalPanelProps) {
       <div className="flex items-center justify-between h-9 px-2 border-b bg-muted/20">
         <TerminalTabs />
         <div className="flex items-center gap-1">
-          {/* <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={handleCopySelection}
-            title="Copy selection"
-          >
-            <Copy className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={handleCopyToChat}
-            title="Copy to chat"
-          >
-            <MessageSquare className="h-3.5 w-3.5" />
-          </Button> */}
+          {onToggleFullscreen && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={onToggleFullscreen}
+                >
+                  {isFullscreen ? (
+                    <Minimize2 className="h-3.5 w-3.5" />
+                  ) : (
+                    <Maximize2 className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+              </TooltipContent>
+            </Tooltip>
+          )}
           {onClose && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={onClose}
-              title="Close terminal panel"
-            >
-              <X className="h-3.5 w-3.5" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Close terminal</TooltipContent>
+            </Tooltip>
           )}
         </div>
       </div>

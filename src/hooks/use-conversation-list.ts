@@ -6,6 +6,7 @@ import { useCallback, useState } from 'react';
 import { logger } from '@/lib/logger';
 import { generateConversationTitle, generateId } from '@/lib/utils';
 import { type Conversation, databaseService } from '@/services/database-service';
+import { useConversationUsageStore } from '@/stores/conversation-usage-store';
 import { settingsManager } from '@/stores/settings-store';
 
 export interface UseConversationListReturn {
@@ -23,7 +24,7 @@ export interface UseConversationListReturn {
   updateConversationTitle: (conversationId: string, title: string) => Promise<void>;
 
   // Navigation and state management
-  selectConversation: (conversationId: string) => void;
+  selectConversation: (conversationId: string) => Promise<void>;
   startNewChat: () => void;
   clearConversation: () => void;
   setCurrentConversationId: (conversationId: string | undefined) => void;
@@ -54,6 +55,8 @@ export function useConversationList(
 
         setCurrentConversationId(activeConversationId);
         setError(null);
+        // Reset usage for new conversation
+        useConversationUsageStore.getState().resetUsage(activeConversationId);
         onConversationStart?.(activeConversationId, title);
         return activeConversationId;
       } catch (err) {
@@ -136,15 +139,34 @@ export function useConversationList(
     [loadConversations]
   );
 
-  const selectConversation = useCallback((conversationId: string) => {
+  const selectConversation = useCallback(async (conversationId: string) => {
     setCurrentConversationId(conversationId);
     settingsManager.setCurrentConversationId(conversationId);
     setError(null);
+
+    // Load conversation usage data for the toolbar display
+    try {
+      const conversation = await databaseService.getConversationDetails(conversationId);
+      if (conversation) {
+        useConversationUsageStore
+          .getState()
+          .setUsage(
+            conversation.id,
+            conversation.cost,
+            conversation.input_token,
+            conversation.output_token
+          );
+      }
+    } catch (err) {
+      logger.error('Failed to load conversation usage:', err);
+    }
   }, []);
 
   const startNewChat = useCallback(() => {
     setCurrentConversationId(undefined);
     setError(null);
+    // Reset usage for new chat
+    useConversationUsageStore.getState().resetUsage();
   }, []);
 
   const clearConversation = useCallback(() => {

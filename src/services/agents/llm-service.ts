@@ -1,11 +1,5 @@
 // src/services/agents/llm-service.ts
-import {
-  type AssistantModelMessage,
-  type ModelMessage,
-  stepCountIs,
-  streamText,
-  type ToolModelMessage,
-} from 'ai';
+import { type AssistantModelMessage, stepCountIs, streamText, type ToolModelMessage } from 'ai';
 import { createErrorContext, extractAndFormatError } from '@/lib/error-utils';
 import { convertMessages } from '@/lib/llm-utils';
 import { logger } from '@/lib/logger';
@@ -13,6 +7,7 @@ import { GEMINI_25_FLASH_LITE } from '@/lib/models';
 import { getToolSync } from '@/lib/tools';
 import { modelService } from '@/services/model-service';
 import { getValidatedWorkspaceRoot } from '@/services/workspace-root-service';
+import { useConversationUsageStore } from '@/stores/conversation-usage-store';
 import { usePlanModeStore } from '@/stores/plan-mode-store';
 import type {
   AgentLoopOptions,
@@ -20,6 +15,7 @@ import type {
   CompressionConfig,
   UIMessage,
 } from '../../types/agent';
+import { aiPricingService } from '../ai-pricing-service';
 import { aiProviderService } from '../ai-provider-service';
 import { MessageCompactor } from '../message-compactor';
 import { ErrorHandler } from './error-handler';
@@ -27,9 +23,6 @@ import { MessageFilter } from './message-filter';
 import { StreamProcessor } from './stream-processor';
 import { ToolExecutor } from './tool-executor';
 
-/**
- * LLMService orchestrates the agent loop and manages LLM interactions
- */
 export class LLMService {
   private readonly messageCompactor: MessageCompactor;
   private readonly messageFilter: MessageFilter;
@@ -50,33 +43,6 @@ export class LLMService {
     this.streamProcessor = new StreamProcessor();
     this.toolExecutor = new ToolExecutor();
     this.errorHandler = new ErrorHandler();
-  }
-
-  /**
-   * Extract text content from a ModelMessage, handling both string and array content
-   * @param message The message to extract text from
-   * @param maxLength Maximum length of the extracted text (default: 500)
-   * @returns Extracted text, truncated if necessary
-   */
-  private extractTextFromMessage(message: ModelMessage, maxLength = 500): string {
-    let text = '';
-
-    if (typeof message.content === 'string') {
-      text = message.content;
-    } else if (Array.isArray(message.content)) {
-      // Extract all text parts from the content array
-      const textParts = message.content
-        .filter((part: any) => part.type === 'text' && part.text)
-        .map((part: any) => part.text);
-      text = textParts.join(' ');
-    }
-
-    // Truncate if necessary
-    if (text.length > maxLength) {
-      return `${text.slice(0, maxLength)}...`;
-    }
-
-    return text;
   }
 
   // Manual agent loop with streamText
@@ -345,7 +311,18 @@ export class LLMService {
                 loopState.lastRequestTokens = totalUsage.totalTokens;
               }
 
-              logger.info('?', {
+              // Update conversation usage for UI display
+              if (usage && conversationId && conversationId !== 'nested') {
+                const inputTokens = usage.inputTokens || 0;
+                const outputTokens = usage.outputTokens || 0;
+                const cost = aiPricingService.calculateCost(model, {
+                  inputTokens,
+                  outputTokens,
+                });
+                useConversationUsageStore.getState().addUsage(cost, inputTokens, outputTokens);
+              }
+
+              logger.info('onFinish', {
                 finishReason,
                 requestDuration,
                 totalUsage: totalUsage,

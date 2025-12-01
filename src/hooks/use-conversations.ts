@@ -53,7 +53,7 @@ export interface UseConversationsReturn {
   ) => Promise<void>;
 
   // Navigation and state management
-  selectConversation: (conversationId: string) => void;
+  selectConversation: (conversationId: string) => Promise<void>;
   startNewChat: () => void;
   clearConversation: () => void;
   setCurrentConversationId: (conversationId: string | undefined) => void;

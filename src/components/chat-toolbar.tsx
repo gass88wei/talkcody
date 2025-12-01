@@ -1,4 +1,4 @@
-import { Plus, SquareTerminal, Zap } from 'lucide-react';
+import { ArrowDown, ArrowUp, Plus, SquareTerminal, Zap } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { logger } from '@/lib/logger';
 import { modelService } from '@/services/model-service';
 import { useAgentExecutionStore } from '@/stores/agent-execution-store';
+import { useConversationUsageStore } from '@/stores/conversation-usage-store';
 import { usePlanModeStore } from '@/stores/plan-mode-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import { ChatHistory } from './chat-history';
@@ -49,6 +50,18 @@ export function ChatToolbar({
   const [modelName, setModelName] = useState<string>('');
   const { isPlanModeEnabled } = usePlanModeStore();
   const { isAgentRunning } = useAgentExecutionStore();
+  const { cost, inputTokens, outputTokens } = useConversationUsageStore();
+
+  const formatTokens = (tokens: number): string => {
+    if (tokens >= 1000) {
+      return `${(tokens / 1000).toFixed(1)}k`;
+    }
+    return tokens.toString();
+  };
+
+  const formatCost = (costValue: number): string => {
+    return `$${costValue.toFixed(4)}`;
+  };
 
   // Subscribe to settings store for reactive updates
   const {
@@ -133,6 +146,7 @@ export function ChatToolbar({
             </span>
           </div>
         )}
+
         <Tooltip>
           <TooltipTrigger asChild>
             <Badge variant={isPlanModeEnabled ? 'default' : 'secondary'} className="text-xs">
@@ -169,6 +183,22 @@ export function ChatToolbar({
             </p>
           </TooltipContent>
         </Tooltip>
+
+        {(cost > 0 || inputTokens > 0 || outputTokens > 0) && (
+          <div className="flex items-center gap-1.5 rounded-md bg-emerald-100 px-2 py-1 dark:bg-emerald-900/30">
+            <span className="font-medium text-emerald-700 text-xs dark:text-emerald-300">
+              {formatCost(cost)}
+            </span>
+            <span className="flex items-center text-emerald-600 text-xs dark:text-emerald-400">
+              <ArrowUp className="h-3 w-3" />
+              {formatTokens(inputTokens)} Tokens
+            </span>
+            <span className="flex items-center text-emerald-600 text-xs dark:text-emerald-400">
+              <ArrowDown className="h-3 w-3" />
+              {formatTokens(outputTokens)} Tokens
+            </span>
+          </div>
+        )}
       </div>
       <div className="flex items-center gap-1">
         {onToggleTerminal && (

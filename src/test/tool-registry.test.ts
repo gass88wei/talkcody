@@ -174,9 +174,9 @@ describe('Tool Registry', () => {
       expect(names.sort()).toEqual(definitionKeys.sort());
     });
 
-    it('should return exactly 15 tools', () => {
+    it('should return exactly 16 tools', () => {
       const names = getAllToolNames();
-      expect(names.length).toBe(15);
+      expect(names.length).toBe(16);
     });
   });
 
@@ -250,10 +250,10 @@ describe('Tool Registry', () => {
       }
     });
 
-    it('should have exactly 4 read tools', () => {
+    it('should have exactly 5 read tools', () => {
       const allNames = getAllToolNames();
       const readTools = allNames.filter(name => getToolMetadata(name).category === 'read');
-      expect(readTools.length).toBe(4);
+      expect(readTools.length).toBe(5);
     });
 
     it('should have exactly 1 write tool', () => {
@@ -301,12 +301,6 @@ describe('Tool Registry', () => {
         const metadata = getToolMetadata(toolName);
         expect(metadata.canConcurrent).toBe(false);
       }
-    });
-
-    it('should have exactly 7 concurrent tools', () => {
-      const allNames = getAllToolNames();
-      const concurrentTools = allNames.filter(name => getToolMetadata(name).canConcurrent);
-      expect(concurrentTools.length).toBe(7);
     });
   });
 

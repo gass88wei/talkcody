@@ -276,6 +276,13 @@ analytics.get('/dashboard/html', async (c) => {
     ${stats.topVersions.map((v) => `<tr><td>${v.version}</td><td>${v.count}</td></tr>`).join('')}
     ${stats.topVersions.length === 0 ? '<tr><td colspan="2">No data yet</td></tr>' : ''}
   </table>
+
+  <h2>Operating Systems</h2>
+  <table>
+    <tr><th>OS</th><th>Unique Devices</th></tr>
+    ${stats.topOS.map((o) => `<tr><td>${o.os}</td><td>${o.count}</td></tr>`).join('')}
+    ${stats.topOS.length === 0 ? '<tr><td colspan="2">No data yet</td></tr>' : ''}
+  </table>
 </body>
 </html>`;
 

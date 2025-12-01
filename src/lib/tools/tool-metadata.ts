@@ -96,6 +96,11 @@ export const TOOL_METADATA: Record<string, ToolMetadata> = {
     canConcurrent: true,
     fileOperation: false,
   },
+  githubPRTool: {
+    category: 'read',
+    canConcurrent: true,
+    fileOperation: false,
+  },
 };
 
 /**

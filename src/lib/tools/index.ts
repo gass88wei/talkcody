@@ -25,6 +25,7 @@ import { editFile } from './edit-file-tool';
 import { executeSkillScriptTool } from './execute-skill-script-tool';
 import { exitPlanModeTool } from './exit-plan-mode-tool';
 import { getSkillTool } from './get-skill-tool';
+import { githubPRTool } from './github-pr-tool';
 import { globTool } from './glob-tool';
 import { listFiles } from './list-files-tool';
 import { readFile } from './read-file-tool';
@@ -185,6 +186,15 @@ export const TOOL_DEFINITIONS = {
     label: 'Web Fetch',
     metadata: {
       category: 'other' as ToolCategory,
+      canConcurrent: true,
+      fileOperation: false,
+    },
+  },
+  githubPRTool: {
+    tool: githubPRTool,
+    label: 'GitHub PR',
+    metadata: {
+      category: 'read' as ToolCategory,
       canConcurrent: true,
       fileOperation: false,
     },
