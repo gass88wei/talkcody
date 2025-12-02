@@ -1,4 +1,5 @@
 import { getVersion } from '@tauri-apps/api/app';
+import { type as osType, platform } from '@tauri-apps/plugin-os';
 import { AlertCircle, Download, RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -13,6 +14,7 @@ import { logger } from '@/lib/logger';
 export function AboutSettings() {
   const { t } = useLocale();
   const [appVersion, setAppVersion] = useState<string>('');
+  const [platformName, setPlatformName] = useState<string>('');
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [lastCheckTime, setLastCheckTime] = useState<string | null>(null);
   const updater = useUpdater({ checkOnMount: false, periodicCheck: false });
@@ -27,6 +29,23 @@ export function AboutSettings() {
       }
     };
 
+    const loadPlatform = () => {
+      try {
+        const os = osType();
+        const plat = platform();
+        const osNames: Record<string, string> = {
+          windows: 'Windows',
+          macos: 'macOS',
+          linux: 'Linux',
+        };
+        const displayName = osNames[os] || plat;
+        setPlatformName(displayName);
+      } catch (error) {
+        logger.error('Failed to get platform:', error);
+        setPlatformName('Unknown');
+      }
+    };
+
     const loadLastCheckTime = () => {
       const lastCheck = localStorage.getItem('last_update_check');
       if (lastCheck) {
@@ -36,6 +55,7 @@ export function AboutSettings() {
     };
 
     loadVersion();
+    loadPlatform();
     loadLastCheckTime();
   }, []);
 
@@ -83,7 +103,7 @@ export function AboutSettings() {
             </div>
             <div className="flex items-center justify-between py-2">
               <span className="text-sm text-muted-foreground">{t.Settings.about.platform}</span>
-              <span className="text-sm font-medium">{t.Settings.about.macos}</span>
+              <span className="text-sm font-medium">{platformName || 'Loading...'}</span>
             </div>
           </div>
 
