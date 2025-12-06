@@ -1,20 +1,41 @@
+import path from 'node:path';
 import { vi } from 'vitest';
 import type { CodeSearchResult } from '@/lib/tools/code-search-tool';
 
 // Mock the Tauri core API
 const mockInvoke = vi.hoisted(() => vi.fn());
+const mockIsAbsolute = vi.hoisted(() => vi.fn());
+const mockJoin = vi.hoisted(() => vi.fn());
+const mockGetValidatedWorkspaceRoot = vi.hoisted(() => vi.fn());
 
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: mockInvoke,
 }));
 
+vi.mock('@tauri-apps/api/path', () => ({
+  isAbsolute: mockIsAbsolute,
+  join: mockJoin,
+}));
+
+vi.mock('@/services/workspace-root-service', () => ({
+  getValidatedWorkspaceRoot: mockGetValidatedWorkspaceRoot,
+}));
+
 import { beforeEach, describe, expect, it } from 'vitest';
 import { codeSearch } from '@/lib/tools/code-search-tool';
+
+const PROJECT_ROOT = '/Users/test/project';
 
 describe('codeSearch Tool', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockInvoke.mockClear();
+    // Use realistic isAbsolute behavior based on Node.js path module
+    mockIsAbsolute.mockImplementation(async (p: string) => path.isAbsolute(p));
+    // Use realistic join behavior
+    mockJoin.mockImplementation(async (...paths: string[]) => path.join(...paths));
+    // Default project root
+    mockGetValidatedWorkspaceRoot.mockResolvedValue(PROJECT_ROOT);
   });
 
   // Helper function to normalize the result
@@ -314,6 +335,163 @@ describe('codeSearch Tool', () => {
       query: 'ForkJoinTask',
       rootPath: '/Users/test/starrocks',
       fileTypes: ['log'],
+    });
+  });
+
+  describe('path handling - relative path resolution', () => {
+    it('should convert "." to project root path', async () => {
+      // This is the key test case for the bug fix
+      // Before fix: path "." was passed directly to Rust command
+      // After fix: "." is converted to projectRoot using join()
+
+      const mockResult = [
+        {
+          file_path: 'test.ts',
+          matches: [
+            {
+              line_number: 1,
+              line_content: 'console.log("hello");',
+              byte_offset: 0,
+            },
+          ],
+        },
+      ];
+
+      mockInvoke.mockResolvedValue(mockResult);
+
+      const result = await codeSearch.execute?.({
+        pattern: 'console.log',
+        path: '.',
+      });
+
+      const actualResult = await normalizeResult(result);
+
+      expect(actualResult.success).toBe(true);
+      // Verify isAbsolute was called with "."
+      expect(mockIsAbsolute).toHaveBeenCalledWith('.');
+      // Verify "." is not absolute
+      expect(path.isAbsolute('.')).toBe(false);
+      // Verify join was called with projectRoot and "."
+      expect(mockJoin).toHaveBeenCalledWith(PROJECT_ROOT, '.');
+      // The search should use projectRoot, not "."
+      expect(mockInvoke).toHaveBeenCalledWith('search_file_content', {
+        query: 'console.log',
+        rootPath: PROJECT_ROOT,
+        fileTypes: null,
+      });
+    });
+
+    it('should convert relative path to absolute path', async () => {
+      const mockResult = [
+        {
+          file_path: 'src/utils.ts',
+          matches: [
+            {
+              line_number: 5,
+              line_content: 'export function helper() {',
+              byte_offset: 100,
+            },
+          ],
+        },
+      ];
+
+      mockInvoke.mockResolvedValue(mockResult);
+
+      const result = await codeSearch.execute?.({
+        pattern: 'helper',
+        path: 'src',
+      });
+
+      const actualResult = await normalizeResult(result);
+
+      expect(actualResult.success).toBe(true);
+      expect(mockIsAbsolute).toHaveBeenCalledWith('src');
+      expect(path.isAbsolute('src')).toBe(false);
+      expect(mockJoin).toHaveBeenCalledWith(PROJECT_ROOT, 'src');
+      expect(mockInvoke).toHaveBeenCalledWith('search_file_content', {
+        query: 'helper',
+        rootPath: path.join(PROJECT_ROOT, 'src'),
+        fileTypes: null,
+      });
+    });
+
+    it('should handle "./src" relative path correctly', async () => {
+      mockInvoke.mockResolvedValue([]);
+
+      const result = await codeSearch.execute?.({
+        pattern: 'test',
+        path: './src',
+      });
+
+      const actualResult = await normalizeResult(result);
+
+      expect(actualResult.success).toBe(true);
+      expect(mockIsAbsolute).toHaveBeenCalledWith('./src');
+      expect(path.isAbsolute('./src')).toBe(false);
+      expect(mockJoin).toHaveBeenCalledWith(PROJECT_ROOT, './src');
+      expect(mockInvoke).toHaveBeenCalledWith('search_file_content', {
+        query: 'test',
+        rootPath: path.join(PROJECT_ROOT, './src'),
+        fileTypes: null,
+      });
+    });
+
+    it('should handle "../other" relative path correctly', async () => {
+      mockInvoke.mockResolvedValue([]);
+
+      const result = await codeSearch.execute?.({
+        pattern: 'test',
+        path: '../other',
+      });
+
+      const actualResult = await normalizeResult(result);
+
+      expect(actualResult.success).toBe(true);
+      expect(mockIsAbsolute).toHaveBeenCalledWith('../other');
+      expect(path.isAbsolute('../other')).toBe(false);
+      expect(mockJoin).toHaveBeenCalledWith(PROJECT_ROOT, '../other');
+      expect(mockInvoke).toHaveBeenCalledWith('search_file_content', {
+        query: 'test',
+        rootPath: path.join(PROJECT_ROOT, '../other'),
+        fileTypes: null,
+      });
+    });
+
+    it('should use absolute path directly without joining', async () => {
+      const absolutePath = '/absolute/path/to/search';
+      mockInvoke.mockResolvedValue([]);
+
+      const result = await codeSearch.execute?.({
+        pattern: 'test',
+        path: absolutePath,
+      });
+
+      const actualResult = await normalizeResult(result);
+
+      expect(actualResult.success).toBe(true);
+      expect(mockIsAbsolute).toHaveBeenCalledWith(absolutePath);
+      expect(path.isAbsolute(absolutePath)).toBe(true);
+      // join should NOT be called for absolute paths
+      expect(mockJoin).not.toHaveBeenCalled();
+      expect(mockInvoke).toHaveBeenCalledWith('search_file_content', {
+        query: 'test',
+        rootPath: absolutePath,
+        fileTypes: null,
+      });
+    });
+
+    it('should return error when project root is not set and relative path provided', async () => {
+      mockGetValidatedWorkspaceRoot.mockResolvedValue(null);
+
+      const result = await codeSearch.execute?.({
+        pattern: 'test',
+        path: '.',
+      });
+
+      const actualResult = await normalizeResult(result);
+
+      expect(actualResult.success).toBe(false);
+      expect(actualResult.error).toContain('Project root path not set');
     });
   });
 });

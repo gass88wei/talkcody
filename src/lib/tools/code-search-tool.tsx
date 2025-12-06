@@ -1,10 +1,12 @@
 import { invoke } from '@tauri-apps/api/core';
+import { isAbsolute, join } from '@tauri-apps/api/path';
 import { Search } from 'lucide-react';
 import { z } from 'zod';
 import { GenericToolDoing } from '@/components/tools/generic-tool-doing';
 import { GenericToolResult } from '@/components/tools/generic-tool-result';
 import { createTool } from '@/lib/create-tool';
 import { logger } from '@/lib/logger';
+import { getValidatedWorkspaceRoot } from '@/services/workspace-root-service';
 
 export interface CodeSearchResult {
   success: boolean;
@@ -39,9 +41,23 @@ Use this to find code patterns, function definitions, variable usage, or any tex
         };
       }
 
+      // Resolve relative paths to absolute paths
+      let searchPath = path;
+      if (!(await isAbsolute(searchPath))) {
+        const projectRoot = await getValidatedWorkspaceRoot();
+        if (!projectRoot) {
+          return {
+            success: false,
+            result: 'Error: Project root path not set',
+            error: 'Project root path not set. Please set a project root path first.',
+          };
+        }
+        searchPath = await join(projectRoot, searchPath);
+      }
+
       logger.info('Executing Rust RipgrepSearch with:', {
         pattern,
-        path,
+        path: searchPath,
         file_types,
       });
 
@@ -55,7 +71,7 @@ Use this to find code patterns, function definitions, variable usage, or any tex
         }>;
       }> = await invoke('search_file_content', {
         query: pattern,
-        rootPath: path,
+        rootPath: searchPath,
         fileTypes: file_types || null,
       });
 
