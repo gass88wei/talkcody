@@ -2,5 +2,5 @@
   "title": "开源",
   "icon": "Code",
   "defaultOpen": true,
-  "pages": ["development-setup", "architecture"]
+  "pages": ["development-setup", "architecture", "roadmap"]
 }

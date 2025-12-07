@@ -80,9 +80,12 @@ Want to build from source or contribute?
 
 TalkCody uses a two-tier architecture with React 19 + TypeScript frontend and Tauri 2 + Rust backend.
 
-📖 **[Architecture Overview](https://www.talkcody.com/docs/open-source/architecture)**
+📖 **[Architecture Overview](https://talkcody.com/docs/open-source/architecture)**
 
 
+## Roadmap
+
+Check out our **[ROADMAP](https://talkcody.com/docs/open-source/roadmap)** to see what we are working on and the future direction of TalkCody.
 
 ## Contributing
 
