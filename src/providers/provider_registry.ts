@@ -145,7 +145,11 @@ export class ProviderRegistry {
   }
 
   // Check if API key is configured for provider
-  hasApiKey(providerId: string, apiKeys: Record<string, any>): boolean {
+  hasApiKey(
+    providerId: string,
+    apiKeys: Record<string, string | undefined>,
+    oauthConfig?: { anthropicAccessToken?: string | null }
+  ): boolean {
     const provider = this.getProvider(providerId);
     if (!provider) {
       logger.warn('[hasApiKey] Provider not found', { providerId });
@@ -161,6 +165,11 @@ export class ProviderRegistry {
     if (isLocalProvider(providerId)) {
       const result = apiKeys[providerId] === 'enabled';
       return result;
+    }
+
+    // Check OAuth for Anthropic
+    if (providerId === 'anthropic' && oauthConfig?.anthropicAccessToken) {
+      return true;
     }
 
     const apiKey = apiKeys[providerId];

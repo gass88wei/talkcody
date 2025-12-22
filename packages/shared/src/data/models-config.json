@@ -252,7 +252,7 @@
         "openRouter"
       ],
       "providerMappings": {
-        "anthropic": "claude-opus-4.5",
+        "anthropic": "claude-opus-4-5",
         "aiGateway": "anthropic/claude-opus-4.5",
         "openRouter": "anthropic/claude-opus-4.5"
       },
@@ -273,7 +273,7 @@
         "openRouter"
       ],
       "providerMappings": {
-        "anthropic": "claude-sonnet-4.5",
+        "anthropic": "claude-sonnet-4-5",
         "aiGateway": "anthropic/claude-sonnet-4.5",
         "openRouter": "anthropic/claude-sonnet-4.5"
       },

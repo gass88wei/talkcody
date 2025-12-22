@@ -14,6 +14,7 @@ import { convertToAnthropicFormat } from '@/lib/message-convert';
 import { MessageTransform } from '@/lib/message-transform';
 import { validateAnthropicMessages } from '@/lib/message-validate';
 import { getContextLength } from '@/lib/models';
+import { parseModelIdentifier } from '@/lib/provider-utils';
 import { getToolSync } from '@/lib/tools';
 import { generateId } from '@/lib/utils';
 import { getLocale, type SupportedLocale } from '@/locales';
@@ -199,10 +200,12 @@ export class LLMService {
         };
 
         // Convert initial messages to model format
+        const { providerId } = parseModelIdentifier(model);
         const modelMessages = await convertMessages(inputMessages, {
           rootPath,
           systemPrompt,
           model,
+          providerId: providerId ?? undefined,
         });
 
         // Validate and convert to Anthropic-compliant format
@@ -506,18 +509,20 @@ export class LLMService {
                   case 'reasoning-start':
                     streamProcessor.processReasoningStart(
                       (delta as { id: string }).id,
+                      (delta as { providerMetadata?: Record<string, unknown> }).providerMetadata,
                       streamCallbacks
                     );
                     break;
                   case 'reasoning-delta':
-                    if (delta.text) {
-                      streamProcessor.processReasoningDelta(
-                        (delta as { id: string }).id || 'default',
-                        delta.text,
-                        streamContext,
-                        streamCallbacks
-                      );
-                    }
+                    // Always process reasoning-delta even if text is empty
+                    // because signature is delivered via providerMetadata with empty text
+                    streamProcessor.processReasoningDelta(
+                      (delta as { id: string }).id || 'default',
+                      delta.text || '',
+                      (delta as { providerMetadata?: Record<string, unknown> }).providerMetadata,
+                      streamContext,
+                      streamCallbacks
+                    );
                     break;
                   case 'reasoning-end':
                     streamProcessor.processReasoningEnd(
@@ -771,12 +776,20 @@ export class LLMService {
             });
 
             // Apply provider-specific transformation (e.g., DeepSeek reasoning_content)
-            const transformed = MessageTransform.transformAssistantContent(assistantContent, model);
+            const { providerId: pid } = parseModelIdentifier(model);
+            const { transformedContent } = MessageTransform.transform(
+              loopState.messages,
+              model,
+              pid ?? undefined,
+              assistantContent
+            );
 
             const assistantMessage: AssistantModelMessage = {
               role: 'assistant',
-              content: [...transformed.content, ...toolCallParts],
-              ...(transformed.providerOptions && { providerOptions: transformed.providerOptions }),
+              content: [...(transformedContent?.content ?? assistantContent), ...toolCallParts],
+              ...(transformedContent?.providerOptions && {
+                providerOptions: transformedContent.providerOptions,
+              }),
             };
             loopState.messages.push(assistantMessage);
 

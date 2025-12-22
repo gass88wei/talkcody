@@ -6,8 +6,50 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { streamFetch } from '@/lib/tauri-fetch';
+import { CLAUDE_OAUTH_BETA_HEADERS } from '@/services/claude-oauth-service';
 import type { ProviderRegistry } from '@/types';
 import { createTalkCodyProvider } from './talkcody-provider';
+
+/**
+ * Create a custom fetch function for Claude OAuth that:
+ * 1. Adds Authorization: Bearer header
+ * 2. Removes x-api-key header
+ * 3. Adds OAuth beta headers
+ * 4. Adds Claude Code User-Agent header (required for OAuth)
+ */
+function createClaudeOAuthFetch(accessToken: string): typeof fetch {
+  return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    const headers = new Headers(init?.headers);
+
+    // Remove x-api-key header (SDK adds this automatically)
+    headers.delete('x-api-key');
+
+    // Add Bearer token authorization
+    headers.set('Authorization', `Bearer ${accessToken}`);
+
+    // Merge beta headers
+    const existingBeta = headers.get('anthropic-beta') || '';
+    const existingBetaList = existingBeta
+      .split(',')
+      .map((b) => b.trim())
+      .filter(Boolean);
+    const oauthBetaList = CLAUDE_OAUTH_BETA_HEADERS.split(',').map((b) => b.trim());
+    const mergedBetas = [...new Set([...oauthBetaList, ...existingBetaList])].join(',');
+    headers.set('anthropic-beta', mergedBetas);
+
+    return streamFetch(input, { ...init, headers });
+  };
+}
+
+/**
+ * Create an Anthropic provider that uses OAuth authentication
+ */
+export function createAnthropicOAuthProvider(accessToken: string) {
+  return createAnthropic({
+    apiKey: 'oauth-placeholder', // SDK requires this but we override with Bearer token
+    fetch: createClaudeOAuthFetch(accessToken) as typeof fetch,
+  });
+}
 
 export const PROVIDER_CONFIGS: ProviderRegistry = {
   // TalkCody Free Provider
@@ -120,6 +162,7 @@ export const PROVIDER_CONFIGS: ProviderRegistry = {
     apiKeyName: 'ANTHROPIC_API_KEY',
     required: false,
     type: 'custom',
+    supportsOAuth: true, // Supports Claude Pro/Max OAuth authentication
     createProvider: (apiKey: string, baseUrl?: string) =>
       createAnthropic({
         apiKey,

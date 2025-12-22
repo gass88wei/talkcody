@@ -230,6 +230,23 @@ export interface LocaleDefinition {
       viewDocumentation: string;
       baseUrlPlaceholder: (url: string) => string;
     };
+    claudeOAuth: {
+      title: string;
+      description: string;
+      signIn: string;
+      browserOpened: string;
+      pasteCode: string;
+      pasteCodeLabel: string;
+      codePlaceholder: string;
+      connect: string;
+      connected: string;
+      connectedWithPlan: string;
+      disconnect: string;
+      disconnected: string;
+      useApiKeyInstead: string;
+      connectionFailed: string;
+      tokenRefreshFailed: string;
+    };
     models: {
       title: string;
       description: string;
