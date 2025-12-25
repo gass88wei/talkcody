@@ -240,6 +240,13 @@ jobs:
         run: |
           echo "Building Tauri app for x86_64-apple-darwin (unsigned)..."
           
+          # Verify signing key is set
+          if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            echo "ERROR: TAURI_SIGNING_PRIVATE_KEY is not set!"
+            exit 1
+          fi
+          echo "TAURI_SIGNING_PRIVATE_KEY is set (length: ${#TAURI_SIGNING_PRIVATE_KEY})"
+
           # Enable createUpdaterArtifacts for updater bundle
           jq '.bundle.createUpdaterArtifacts = true' src-tauri/tauri.conf.json > /tmp/tauri.conf.json.tmp
           mv /tmp/tauri.conf.json.tmp src-tauri/tauri.conf.json
@@ -248,7 +255,7 @@ jobs:
           echo "Verifying createUpdaterArtifacts setting:"
           jq '.bundle.createUpdaterArtifacts' src-tauri/tauri.conf.json
 
-          # Build without signing and notarization (will be done locally)
+          # Build without code signing and notarization (will be done locally)
           bun run tauri build --target x86_64-apple-darwin
 
           # List generated files
@@ -258,6 +265,8 @@ jobs:
           echo ""
           echo "Generated files in dmg directory:"
           ls -la src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/ || echo "Directory not found"
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
 
       - name: Find Intel DMG file
         id: find-dmg
