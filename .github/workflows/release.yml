@@ -240,6 +240,14 @@ jobs:
         run: |
           echo "Building Tauri app for x86_64-apple-darwin (unsigned)..."
           
+          # Enable createUpdaterArtifacts for updater bundle
+          jq '.bundle.createUpdaterArtifacts = true' src-tauri/tauri.conf.json > /tmp/tauri.conf.json.tmp
+          mv /tmp/tauri.conf.json.tmp src-tauri/tauri.conf.json
+          
+          # Verify the change
+          echo "Verifying createUpdaterArtifacts setting:"
+          jq '.bundle.createUpdaterArtifacts' src-tauri/tauri.conf.json
+
           # Build without signing and notarization (will be done locally)
           bun run tauri build --target x86_64-apple-darwin
 
