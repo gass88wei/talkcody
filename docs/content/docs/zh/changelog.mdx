@@ -8,6 +8,26 @@ import { Callout } from 'fumadocs-ui/components/callout';
 
 TalkCody 的所有重要更新都记录在这里。
 
+## [0.2.3] - 2026-01-03
+
+### 新增
+
+- **Usage 使用量页面**：新增使用量统计页面，可查看 Claude 订阅、OpenAI 订阅、GitHub Copilot 订阅、智谱 Coding Plan 的使用情况
+- **免费使用方式扩展**：新增 OpenCode Zen 免费提供商，可以免费使用 GLM-4.7 模型，目前共支持 9 种完全免费的使用方式，详情参考 [TalkCody 免费使用指南](/zh/docs/guides/free-use)
+- **GitHub Skill 导入**：支持一键导入Github 仓库的 Agent Skills
+- **macOS Dock 菜单支持**：支持快速打开最近的项目和新建窗口，提升 macOS 用户的使用体验
+- **Vue 语法高亮支持**：新增 Vue 语法高亮和 LSP 支持，提供更好的 Vue 项目开发体验
+
+### 优化
+
+- **优化 Plan Agent**：改进 Plan Agent 的执行逻辑
+- **Agent Skills Specification 重构**：将 Skills 重构为 Agent Skills Specification，提升智能体的标准化程度
+- **改进超时处理**：优化 call-agent-tool 的超时处理机制
+
+### 修复
+
+- **修复 Linux 中文输入问题**：解决 Linux 平台中文输入法的兼容性问题
+
 ## [0.2.2] - 2025-12-30
 
 ### 新增

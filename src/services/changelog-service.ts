@@ -20,97 +20,37 @@ export interface ChangelogEntry {
 // Only include the most recent versions that users care about
 export const CHANGELOG_DATA: ChangelogEntry[] = [
   {
-    version: '0.2.2',
-    date: '2025-12-30',
-    en: {
-      added: ['Unified Explore page and Chat page for a more coherent user experience.'],
-      changed: [
-        'Improved message filtering and compaction logic to better support Long Run Tasks.',
-        'Optimized prompts for use via OpenAI subscriptions.',
-        'Improved timeout handling when calling sub-agents.',
-      ],
-      fixed: [
-        'Resolved a bug in GitHub Copilot provider when handling image requests.',
-        'Fixed an issue where the editor could not perceive external file modifications in a timely manner.',
-        'Fixed a bug where the Diff display was incorrect for large files in the Edit File result UI.',
-      ],
-    },
-    zh: {
-      added: ['将 Explore 页面和 Chat 页面统一，提供更连贯的用户体验'],
-      changed: [
-        '改进消息过滤和压缩逻辑，更好地支持长任务（Long Run Task）',
-        '优化通过 OpenAI 订阅使用的提示词',
-        '改进了调用子 Agent 时的超时处理机制',
-      ],
-      fixed: [
-        '解决了 GitHub Copilot provider 处理图片请求时的 Bug',
-        '修复了编辑器无法及时感知外部文件修改的问题',
-        '修复了 Edit File 结果 UI 在处理大文件时 Diff 显示不对的 Bug',
-      ],
-    },
-  },
-  {
-    version: '0.2.1',
-    date: '2025-12-27',
+    version: '0.2.3',
+    date: '2026-01-03',
     en: {
       added: [
-        'Add Qwen Code Free Provider, to save your coding cost',
-        'Add Github Copilot Free Provider, to save your coding cost',
+        'New usage statistics page to view usage for Claude subscription, OpenAI subscription, GitHub Copilot subscription, and Zhipu Coding Plan.',
+        'Added OpenCode Zen free provider for free GLM-4.7 model usage, now supporting 9 completely free usage methods.',
+        'Support for one-click import of Agent Skills from GitHub repositories.',
+        'macOS Dock Menu support for quickly opening recent projects and creating new windows.',
+        'New Vue syntax highlighting and LSP support for a better Vue project development experience.',
       ],
-      changed: ['Improve context compaction logic, to better handle long conversations'],
+      changed: [
+        'Improved Plan Agent execution logic.',
+        'Refactored Skills to Agent Skills Specification for better standardization of agents.',
+        'Optimized call-agent-tool timeout handling mechanism.',
+      ],
+      fixed: ['Resolved Chinese input method compatibility issues on Linux.'],
     },
     zh: {
       added: [
-        '新增 Qwen Code 免费提供商，节省您的编码成本',
-        '新增 Github Copilot 免费提供商，节省您的编码成本',
-      ],
-      changed: ['优化上下文压缩逻辑，更好地处理长对话'],
-    },
-  },
-  {
-    version: '0.2.0',
-    date: '2025-12-25',
-    en: {
-      added: [
-        'Claude model support via Claude Pro/Max subscription',
-        'OpenAI model support via ChatGPT Plus/Pro subscription',
-        'LSP Support: Complete Language Server Protocol implementation with code navigation, code completion, go-to-definition, find references, and other core features, significantly improving code understanding and editing experience',
-        'Exa Free Web Search: New Exa search engine provider for out-of-the-box web search',
-        'Custom Terminal Font: Support for custom terminal font and font size settings',
-        'MiniMax 2.1 model support (free to use via TalkCody Provider)',
-        'GLM 4.7 model support (TalkCody supports hot model updates, latest excellent coding models are usually auto-updated within 12 hours)',
+        '新增使用量统计页面，可查看 Claude 订阅、OpenAI 订阅、GitHub Copilot 订阅、智谱 Coding Plan 的使用情况',
+        '新增 OpenCode Zen 免费提供商，可以免费使用 GLM-4.7 模型，目前共支持 9 种完全免费的使用方式',
+        '支持一键导入 Github 仓库的 Agent Skills',
+        '支持快速打开最近的项目和新建窗口，提升 macOS 用户的使用体验',
+        '新增 Vue 语法高亮和 LSP 支持，提供更好的 Vue 项目开发体验',
       ],
       changed: [
-        'Improved write file and edit file tool result display',
-        'Optimized Prompt Cache for further cost savings',
+        '改进 Plan Agent 的执行逻辑',
+        '将 Skills 重构为 Agent Skills Specification，提升智能体的标准化程度',
+        '优化 call-agent-tool 的超时处理机制',
       ],
-      fixed: [
-        'Fixed Windows terminal related bug',
-        'Fixed model selector list duplicate display bug',
-        'Fixed write file tool failing to write files correctly in some cases',
-        'Fixed incorrect git status display in multi-window scenarios',
-      ],
-    },
-    zh: {
-      added: [
-        '支持通过 Claude Pro/Max 订阅，在 TalkCody 中使用 Claude 模型',
-        '通过 ChatGPT Plus/Pro 订阅，在 TalkCody 中使用 OpenAI 模型',
-        'LSP 支持：完整实现语言服务器协议，提供代码导航、代码补全、跳转到定义、查找引用等核心功能，大幅提升代码理解和编辑体验',
-        'Exa 免费网页搜索：新增 Exa 搜索引擎提供商，让网页搜索开箱即用',
-        '终端字体自定义：支持自定义终端字体和字号设置',
-        '支持 MiniMax 2.1 模型（可以通过 TalkCody Provider 免费使用）',
-        '支持 GLM 4.7 模型（TalkCody 支持模型热更新，一般最新的优秀 Coding 模型 12 小时会自动更新）',
-      ],
-      changed: [
-        '优化 write file 和 edit file tool 的结果展示',
-        '优化 Prompt Cache，进一步节省成本',
-      ],
-      fixed: [
-        '修复 Windows 终端相关 bug',
-        '修复模型选择器列表重复显示 bug',
-        '修复 write file tool 在某些情况下无法正确写入文件的 bug',
-        '修复多窗口下，git status 显示不对的 bug',
-      ],
+      fixed: ['解决 Linux 平台中文输入法的兼容性问题'],
     },
   },
 ];
