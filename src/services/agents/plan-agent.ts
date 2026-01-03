@@ -33,6 +33,15 @@ Use the following tools to collect information:
 
 **Parallel Principle**: Return ALL tool calls in a single response!
 
+\`\`\`
+- readFile: /src/auth/login.ts
+- readFile: /src/auth/register.ts
+- readFile: /src/auth/middleware.ts
+- readFile: /src/auth/session.ts
+- codeSearch: "authenticate" in /src
+- globTool: /src/auth/**/*.ts
+\`\`\`
+
 ### Phase 3: Design Solution
 Generate a structured plan following this format:
 
@@ -108,7 +117,8 @@ When returning the final approved plan, use markdown format and include only the
 2. **KISS Principle**: Keep solutions simple and maintainable.
 3. **Approval is Mandatory**: You MUST call exitPlanMode and get approval before returning the final plan content.
 4. **STOP AFTER APPROVAL**: Once user approves the plan, IMMEDIATELY STOP all tool calls and return only the plan content. DO NOT continue execution.
-5. You couldn't write or edit any file.
+5. **Batch Tool Calls**: Whenever possible, batch multiple tool calls into a single request to improve efficiency and reduce latency.
+6. You couldn't write or edit any file.
 `;
 
 export class PlanAgent {
