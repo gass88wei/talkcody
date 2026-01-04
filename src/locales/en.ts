@@ -1135,6 +1135,10 @@ const en: LocaleDefinition = {
       repositoryOpened: 'Repository opened successfully',
       fileSaved: (name) => `File saved: ${name}`,
       fileRefreshed: 'File refreshed successfully',
+      fileReloaded: (name) => `File reloaded from disk: ${name}`,
+    },
+    info: {
+      fileUpdatedExternally: (name) => `File updated externally: ${name}`,
     },
     errors: {
       failedToLoadDirectory: 'Failed to load directory contents',
@@ -1145,6 +1149,14 @@ const en: LocaleDefinition = {
       failedToRefresh: (message) => `Failed to refresh file: ${message}`,
       failedToRefreshTree: (message) => `Failed to refresh file tree: ${message}`,
     },
+  },
+
+  ExternalFileChange: {
+    title: 'File Modified Externally',
+    description: (fileName) =>
+      `The file "${fileName}" has been modified externally. You have unsaved local changes. What would you like to do?`,
+    keepLocal: 'Keep My Changes',
+    loadDisk: 'Load Disk Version',
   },
 
   FileTree: {

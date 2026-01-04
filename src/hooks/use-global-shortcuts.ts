@@ -117,8 +117,10 @@ export function useGlobalShortcuts(handlers: ShortcutHandlers = {}) {
 
       // Skip if user is typing in an input field
       const target = event.target as HTMLElement;
-      const isInMonacoEditor = !!target.closest('.monaco-editor');
-      const isInXTermTerminal = !!target.closest('.xterm');
+      // Use safe check for closest in case target doesn't have this method (e.g., in jsdom tests)
+      const isInMonacoEditor =
+        typeof target.closest === 'function' && !!target.closest('.monaco-editor');
+      const isInXTermTerminal = typeof target.closest === 'function' && !!target.closest('.xterm');
 
       if (
         target.tagName === 'INPUT' ||

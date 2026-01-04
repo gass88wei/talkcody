@@ -140,7 +140,10 @@ export function setupFindWidgetTooltipSuppression({
       for (const node of mutation.addedNodes) {
         if (node instanceof HTMLElement) {
           if (node.classList.contains('monaco-hover') || node.classList.contains('context-view')) {
+            // Hide the node itself
             hideTooltipNode(node);
+            // Also hide any nested tooltip nodes within it
+            hideTooltipNodes(node);
           } else {
             hideTooltipNodes(node);
           }

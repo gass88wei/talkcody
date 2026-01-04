@@ -397,11 +397,6 @@ export function useMonacoEditor({
           findTooltipSuppressor.apply();
         };
 
-        // Run multiple times to ensure it catches the widget when it's rendered
-        setTimeout(runFindTooltipSuppression, 100);
-        setTimeout(runFindTooltipSuppression, 500);
-        setTimeout(runFindTooltipSuppression, 2000);
-
         // Also run when the find widget might be opened
         editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () => {
           const findAction = editor.getAction('actions.find');

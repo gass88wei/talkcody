@@ -1090,6 +1090,10 @@ export interface LocaleDefinition {
       repositoryOpened: string;
       fileSaved: (name: string) => string;
       fileRefreshed: string;
+      fileReloaded: (name: string) => string;
+    };
+    info: {
+      fileUpdatedExternally: (name: string) => string;
     };
     errors: {
       failedToLoadDirectory: string;
@@ -1100,6 +1104,13 @@ export interface LocaleDefinition {
       failedToRefresh: (message: string) => string;
       failedToRefreshTree: (message: string) => string;
     };
+  };
+
+  ExternalFileChange: {
+    title: string;
+    description: (fileName: string) => string;
+    keepLocal: string;
+    loadDisk: string;
   };
 
   FileTree: {

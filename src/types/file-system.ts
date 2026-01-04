@@ -34,6 +34,11 @@ export interface IndexingProgress {
   currentFile?: string;
 }
 
+export interface PendingExternalChange {
+  filePath: string;
+  diskContent: string;
+}
+
 export interface RepositoryState {
   rootPath: string | null;
   fileTree: FileNode | null;
@@ -45,4 +50,5 @@ export interface RepositoryState {
   selectedFilePath: string | null;
   loadingPhase: LoadingPhase;
   indexingProgress: IndexingProgress | null;
+  pendingExternalChange: PendingExternalChange | null;
 }

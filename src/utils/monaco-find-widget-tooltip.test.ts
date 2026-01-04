@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { setupFindWidgetTooltipSuppression } from './monaco-find-widget-tooltip';
 
 describe('monaco find widget tooltip suppression', () => {
@@ -85,7 +85,8 @@ describe('monaco find widget tooltip suppression', () => {
     contextView.appendChild(hover);
     document.body.appendChild(contextView);
 
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    // Wait for MutationObserver to process the added nodes
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
     expect(contextView.style.display).toBe('none');
     expect(hover.style.display).toBe('none');

@@ -42,6 +42,7 @@ import { ChatBox, type ChatBoxRef } from './chat-box';
 import { ChatPanelHeader } from './chat-panel-header';
 import { DiagnosticsPanel } from './diagnostics/diagnostics-panel';
 import { EmptyRepositoryState } from './empty-repository-state';
+import { ExternalFileChangeDialog } from './external-file-change-dialog';
 import { FileEditor } from './file-editor';
 import { FileTabs } from './file-tabs';
 import { FileTree } from './file-tree';
@@ -900,6 +901,9 @@ export function RepositoryLayout() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* External file change dialog */}
+      <ExternalFileChangeDialog />
     </>
   );
 }

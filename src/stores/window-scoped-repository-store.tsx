@@ -72,9 +72,18 @@ interface RepositoryActions {
   removeIndexedFile: (path: string) => void;
   clearIndexedFiles: () => void;
   isFileIndexed: (path: string) => boolean;
+
+  // External file change handling
+  handleExternalFileChange: (filePath: string) => Promise<void>;
+  applyExternalChange: (keepLocal: boolean) => void;
 }
 
 type RepositoryStore = RepositoryState & RepositoryActions;
+
+// Track recently saved files to avoid false positive external change detection
+// Key: filePath, Value: timestamp
+const recentSaves = new Map<string, number>();
+const RECENT_SAVE_TIMEOUT = 1000; // 1 second window to ignore self-triggered file changes
 
 // Store factory function for creating window-scoped stores
 function createRepositoryStore() {
@@ -91,6 +100,7 @@ function createRepositoryStore() {
     loadingPhase: 'idle',
     indexingProgress: null,
     indexedFiles: new Set<string>(),
+    pendingExternalChange: null,
 
     // Loading phase setter
     setLoadingPhase: (phase: LoadingPhase) => set({ loadingPhase: phase }),
@@ -404,6 +414,9 @@ function createRepositoryStore() {
     // Save a file
     saveFile: async (filePath: string, content: string) => {
       try {
+        // Mark this file as recently saved BEFORE writing to avoid race condition
+        recentSaves.set(filePath, Date.now());
+
         await repositoryService.writeFile(filePath, content);
 
         set((state) => ({
@@ -411,6 +424,14 @@ function createRepositoryStore() {
             file.path === filePath ? { ...file, content, hasUnsavedChanges: false } : file
           ),
         }));
+
+        // Clean up old entries from recentSaves after timeout
+        setTimeout(() => {
+          const saveTime = recentSaves.get(filePath);
+          if (saveTime && Date.now() - saveTime >= RECENT_SAVE_TIMEOUT) {
+            recentSaves.delete(filePath);
+          }
+        }, RECENT_SAVE_TIMEOUT);
 
         toast.success(
           getTranslations().RepositoryStore.success.fileSaved(
@@ -421,6 +442,8 @@ function createRepositoryStore() {
         const errorMessage = (error as Error).message;
         logger.error('Failed to save file:', error);
         toast.error(getTranslations().RepositoryStore.errors.failedToSave(errorMessage));
+        // Remove from recentSaves if save failed
+        recentSaves.delete(filePath);
         throw error;
       }
     },
@@ -671,6 +694,89 @@ function createRepositoryStore() {
 
     isFileIndexed: (path: string) => {
       return get().indexedFiles.has(path);
+    },
+
+    // Handle external file change with smart conflict detection
+    handleExternalFileChange: async (filePath: string) => {
+      // Check if this is a self-triggered save event
+      const saveTime = recentSaves.get(filePath);
+      if (saveTime && Date.now() - saveTime < RECENT_SAVE_TIMEOUT) {
+        logger.debug(`Ignoring self-triggered file change for: ${filePath}`);
+        return;
+      }
+
+      const { openFiles } = get();
+      const openFile = openFiles.find((file) => file.path === filePath);
+
+      // If file is not open, just invalidate cache
+      if (!openFile) {
+        repositoryService.invalidateCache(filePath);
+        return;
+      }
+
+      try {
+        // Read latest content from disk
+        repositoryService.invalidateCache(filePath);
+        const diskContent = await repositoryService.readFileWithCache(filePath);
+
+        // If content is the same, no need to update
+        if (openFile.content === diskContent) {
+          logger.debug(`External file content unchanged for: ${filePath}`);
+          return;
+        }
+
+        logger.info(`External file change detected for: ${filePath}`);
+
+        // If file has unsaved changes, show conflict dialog
+        if (openFile.hasUnsavedChanges) {
+          logger.warn(
+            `Conflict detected: external change with unsaved local changes for: ${filePath}`
+          );
+          set({
+            pendingExternalChange: { filePath, diskContent },
+          });
+        } else {
+          // No unsaved changes, silently update editor content
+          logger.info(`Auto-updating editor content for: ${filePath}`);
+          set((state) => ({
+            openFiles: state.openFiles.map((file) =>
+              file.path === filePath ? { ...file, content: diskContent } : file
+            ),
+          }));
+        }
+      } catch (error) {
+        logger.error('Failed to handle external file change:', error);
+      }
+    },
+
+    // Apply external change based on user choice
+    applyExternalChange: (keepLocal: boolean) => {
+      const { pendingExternalChange } = get();
+      if (!pendingExternalChange) return;
+
+      const { filePath, diskContent } = pendingExternalChange;
+
+      if (!keepLocal) {
+        // User chose to load disk version
+        logger.info(`User chose to load disk version for: ${filePath}`);
+        set((state) => ({
+          openFiles: state.openFiles.map((file) =>
+            file.path === filePath
+              ? { ...file, content: diskContent, hasUnsavedChanges: false }
+              : file
+          ),
+          pendingExternalChange: null,
+        }));
+        toast.success(
+          getTranslations().RepositoryStore.success.fileReloaded(
+            repositoryService.getFileNameFromPath(filePath)
+          )
+        );
+      } else {
+        // User chose to keep local changes
+        logger.info(`User chose to keep local changes for: ${filePath}`);
+        set({ pendingExternalChange: null });
+      }
     },
   }));
 }

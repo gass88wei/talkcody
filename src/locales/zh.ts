@@ -1104,6 +1104,10 @@ const zh: LocaleDefinition = {
       repositoryOpened: '仓库打开成功',
       fileSaved: (name) => `文件已保存：${name}`,
       fileRefreshed: '文件刷新成功',
+      fileReloaded: (name) => `文件已从磁盘重新加载：${name}`,
+    },
+    info: {
+      fileUpdatedExternally: (name) => `文件已被外部修改：${name}`,
     },
     errors: {
       failedToLoadDirectory: '无法加载目录内容',
@@ -1114,6 +1118,14 @@ const zh: LocaleDefinition = {
       failedToRefresh: (message) => `无法刷新文件：${message}`,
       failedToRefreshTree: (message) => `无法刷新文件树：${message}`,
     },
+  },
+
+  ExternalFileChange: {
+    title: '文件已被外部修改',
+    description: (fileName) =>
+      `文件 "${fileName}" 已被外部程序修改。您有未保存的本地修改。您想怎么做？`,
+    keepLocal: '保留我的修改',
+    loadDisk: '加载磁盘版本',
   },
 
   FileTree: {

@@ -1,14 +1,3 @@
-/**
- * Basic Chat Flow E2E Tests
- *
- * NOTE: These tests are LIMITED because TalkCody is a Tauri app that requires
- * the Tauri backend for full functionality. In a browser-only environment,
- * we can only test the onboarding wizard UI and basic static elements.
- *
- * For full E2E testing, use Tauri's WebDriver integration or run tests
- * within the actual Tauri application context.
- */
-
 import { expect, test } from '@playwright/test';
 import { injectTauriMocks } from '../helpers';
 
