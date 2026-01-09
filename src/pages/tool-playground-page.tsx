@@ -1,5 +1,5 @@
 import Editor, { type Monaco } from '@monaco-editor/react';
-import { Download, History, Loader2, Plus, RotateCcw, Settings, Terminal } from 'lucide-react';
+import { Download, History, Plus, RotateCcw, Settings, Terminal } from 'lucide-react';
 import { useCallback, useEffect, useId, useState } from 'react';
 import { toast } from 'sonner';
 import HistoryPanel from '@/components/tools/playground/history-panel';
@@ -291,11 +291,11 @@ export default function ToolPlayground() {
         </div>
 
         {/* Right: Test Panel */}
-        <div className="w-1/2 flex flex-col">
+        <div className="w-1/2 flex flex-col min-h-0">
           <Tabs
             value={activeTab}
             onValueChange={(v) => setActiveTab(v as 'parameters' | 'result' | 'history')}
-            className="flex-1 flex flex-col"
+            className="flex-1 flex flex-col min-h-0"
           >
             <div className="border-b px-4">
               <TabsList className="w-full justify-start bg-transparent h-12">
@@ -312,7 +312,7 @@ export default function ToolPlayground() {
               </TabsList>
             </div>
 
-            <TabsContent value="parameters" className="flex-1 overflow-auto p-4 m-0">
+            <TabsContent value="parameters" className="flex-1 min-h-0 overflow-auto p-4 m-0">
               {compileResult?.tool ? (
                 <ParameterPanel
                   tool={compileResult.tool}
@@ -329,7 +329,7 @@ export default function ToolPlayground() {
               )}
             </TabsContent>
 
-            <TabsContent value="result" className="flex-1 overflow-auto p-4 m-0">
+            <TabsContent value="result" className="flex-1 min-h-0 overflow-auto p-4 m-0">
               {executionResult ? (
                 <ResultPanel
                   result={executionResult}
@@ -346,7 +346,7 @@ export default function ToolPlayground() {
               )}
             </TabsContent>
 
-            <TabsContent value="history" className="flex-1 overflow-auto p-4 m-0">
+            <TabsContent value="history" className="flex-1 min-h-0 overflow-hidden p-4 m-0">
               <HistoryPanel />
             </TabsContent>
           </Tabs>

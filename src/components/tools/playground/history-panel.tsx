@@ -66,7 +66,7 @@ export default function HistoryPanel() {
   }
 
   return (
-    <div className="flex flex-col overflow-y-auto">
+    <div className="flex flex-col h-full min-h-0 overflow-hidden">
       {/* Header */}
       <div className="flex-shrink-0 p-4 border-b space-y-3">
         <div className="flex items-center justify-between">

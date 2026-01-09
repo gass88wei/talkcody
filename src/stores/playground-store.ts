@@ -358,7 +358,9 @@ export const usePlaygroundStore = create<PlaygroundState>()(
 
         try {
           const result = await toolPlaygroundService.executeTool(params, grantedPermissions);
-          const history = toolPlaygroundService.getExecutionHistory();
+          const history = [...toolPlaygroundService.getExecutionHistory()].sort(
+            (a, b) => b.timestamp - a.timestamp
+          );
 
           set({
             isExecuting: false,
