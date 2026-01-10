@@ -23,7 +23,7 @@ export default function InfiniteScroll({
   reverse,
   children,
 }: InfiniteScrollProps) {
-  const observer = React.useRef<IntersectionObserver>();
+  const observer = React.useRef<IntersectionObserver | null>(null);
   // This callback ref will be called when it is dispatched to an element or detached from an element,
   // or when the callback function changes.
   const observerRef = React.useCallback(
@@ -46,7 +46,9 @@ export default function InfiniteScroll({
       // Create a new IntersectionObserver instance because hasMore or next may be changed.
       observer.current = new IntersectionObserver(
         (entries) => {
-          if (entries[0].isIntersecting && hasMore) {
+          const entry = entries[0];
+          if (!entry) return;
+          if (entry.isIntersecting && hasMore) {
             next();
           }
         },
@@ -62,12 +64,6 @@ export default function InfiniteScroll({
   return (
     <>
       {flattenChildren.map((child, index) => {
-        if (!React.isValidElement(child)) {
-          process.env.NODE_ENV === 'development' &&
-            console.warn('You should use a valid element with InfiniteScroll');
-          return child;
-        }
-
         const isObserveTarget = reverse ? index === 0 : index === flattenChildren.length - 1;
         const ref = isObserveTarget ? observerRef : null;
         // @ts-expect-error ignore ref type
