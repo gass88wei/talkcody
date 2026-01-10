@@ -12,6 +12,7 @@
  */
 
 import { logger } from '@/lib/logger';
+import { timedMethod } from '@/lib/timer';
 import { generateId } from '@/lib/utils';
 import { databaseService } from '@/services/database-service';
 import { useExecutionStore } from '@/stores/execution-store';
@@ -197,20 +198,13 @@ class MessageService {
     }
   }
 
-  /**
-   * Add a tool message and persist to database
-   */
+  @timedMethod('addToolMessage')
   async addToolMessage(taskId: string, toolMessage: UIMessage): Promise<void> {
     // Handle nested tool messages (only update parent's nestedMessages array)
     if (toolMessage.parentToolCallId) {
       useTaskStore
         .getState()
         .addNestedToolMessage(taskId, toolMessage.parentToolCallId, toolMessage);
-      logger.info('[MessageService] Added nested tool message', {
-        parentToolCallId: toolMessage.parentToolCallId,
-        nestedMessageId: toolMessage.id,
-      });
-      // Nested messages are NOT persisted
       return;
     }
 

@@ -22,6 +22,9 @@ export interface DeleteTaskResult {
 
 export function useTasks(onTaskStart?: (taskId: string, title: string) => void) {
   const [error, setError] = useState<string | null>(null);
+  const [offset, setOffset] = useState<number>(0);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+  const [loadingMore, setLoadingMore] = useState<boolean>(false);
 
   // Get tasks Map from TaskStore (stable reference)
   const tasksMap = useTaskStore((state) => state.tasks);
@@ -49,15 +52,49 @@ export function useTasks(onTaskStart?: (taskId: string, title: string) => void) 
   const cancelEditingUI = useUIStateStore((state) => state.cancelEditing);
   const finishEditingUI = useUIStateStore((state) => state.finishEditing);
 
-  // Load tasks
+  const limit = 20;
+
+  // Load tasks with pagination (initial load)
   const loadTasks = useCallback(async (projectId?: string) => {
     try {
-      await taskService.loadTasks(projectId);
+      setOffset(0);
+      setHasMore(true);
+      const tasks = await taskService.loadTasksWithPagination(projectId, limit, 0, true);
+      // Update offset for next load
+      setOffset(tasks.length);
+      // Check if there are more tasks
+      if (tasks.length < limit) {
+        setHasMore(false);
+      }
     } catch (err) {
       logger.error('Failed to load tasks:', err);
       setError('Failed to load tasks');
     }
   }, []);
+
+  // Load more tasks (infinite scroll)
+  const loadMoreTasks = useCallback(
+    async (projectId?: string) => {
+      if (loadingMore || !hasMore) return;
+
+      setLoadingMore(true);
+      try {
+        const tasks = await taskService.loadTasksWithPagination(projectId, limit, offset, false);
+        // Update offset for next load
+        setOffset((prev) => prev + limit);
+        // Check if there are more tasks
+        if (tasks.length < limit) {
+          setHasMore(false);
+        }
+      } catch (err) {
+        logger.error('Failed to load more tasks:', err);
+        setError('Failed to load more tasks');
+      } finally {
+        setLoadingMore(false);
+      }
+    },
+    [offset, hasMore, loadingMore]
+  );
 
   const loadTask = useCallback(
     async (
@@ -207,7 +244,10 @@ export function useTasks(onTaskStart?: (taskId: string, title: string) => void) 
     tasks,
     currentTaskId: currentTaskId ?? undefined,
     loading: loadingTasks,
+    loadingMore,
     error,
+    offset,
+    hasMore,
 
     // Editing state
     editingId: editingTaskId,
@@ -216,6 +256,7 @@ export function useTasks(onTaskStart?: (taskId: string, title: string) => void) 
 
     // Actions
     loadTasks,
+    loadMoreTasks,
     loadTask,
     createTask,
     selectTask,

@@ -162,8 +162,6 @@ class ExecutionService {
           onToolMessage: async (uiMessage: UIMessage) => {
             if (abortController.signal.aborted) return;
 
-            // UIMessage is already in correct format, just pass it through
-            // Add assistantId if not set
             const toolMessage: UIMessage = {
               ...uiMessage,
               assistantId: uiMessage.assistantId || agentId,

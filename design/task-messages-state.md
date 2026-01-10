@@ -136,8 +136,6 @@ chat-history.tsx / chat-box.tsx
 │    ├─ databaseService.getMessages(taskId)
 │    ├─ mapStoredMessagesToUI()         │
 │    ├─ TaskStore.setMessages()         │
-│    ├─ TaskStore.touchMessageCache()   │
-│    ├─ TaskStore.evictOldestMessages() │
 │    └─ TaskStore.setLoadingMessages(false)
 └───────────────────────────────────────┘
         ↓
@@ -354,23 +352,6 @@ startExecution: (taskId) => {
 2. ExecutionStore.stopExecution() → calls abortController.abort()
 3. LLMService detects abort signal, stops execution
 4. ExecutionStore updates status → 'stopped'
-```
-
-### 5.5 Message Cache with LRU
-
-TaskStore uses LRU strategy for message cache management:
-
-```typescript
-const MAX_CACHED_TASK_MESSAGES = 20;
-
-// Access order tracking
-messageAccessOrder: string[];
-
-// Touch cache (move to front)
-touchMessageCache(taskId);
-
-// Evict oldest cache (skip current and running tasks)
-evictOldestMessages(runningTaskIds);
 ```
 
 **Protection Strategy**:

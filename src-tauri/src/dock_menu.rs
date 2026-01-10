@@ -1,3 +1,5 @@
+#![cfg_attr(target_os = "macos", allow(unexpected_cfgs))]
+
 use crate::database::Database;
 use crate::window_manager::create_window;
 use serde::{Deserialize, Serialize};
@@ -223,7 +225,6 @@ fn create_native_dock_menu(recent_projects: &[serde_json::Value]) {
     use cocoa::appkit::{NSApp, NSMenu, NSMenuItem};
     use cocoa::base::nil;
     use cocoa::foundation::NSString;
-    use objc::class;
     use objc::declare::ClassDecl;
     use objc::runtime::{Class, Object, Sel};
     use objc::{msg_send, sel, sel_impl};

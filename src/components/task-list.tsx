@@ -1,12 +1,27 @@
 import { MessageSquare } from 'lucide-react';
+import { forwardRef } from 'react';
+import InfiniteScroll from '@/components/ui/infinite-scroll';
 import type { Task } from '@/services/database-service';
 import type { WorktreeInfo } from '@/types/worktree';
 import { TaskItem } from './task-item';
+
+const LoadingIndicator = forwardRef<HTMLDivElement>((props, ref) => (
+  <div ref={ref} className="flex justify-center my-4">
+    <div className="text-muted-foreground text-sm">Loading more tasks...</div>
+  </div>
+));
+LoadingIndicator.displayName = 'LoadingIndicator';
 
 interface TaskListProps {
   tasks: Task[];
   currentTaskId?: string;
   loading: boolean;
+  /** Whether there are more tasks to load */
+  hasMore?: boolean;
+  /** Whether more tasks are being loaded */
+  loadingMore?: boolean;
+  /** Callback to load more tasks */
+  onLoadMore?: () => void;
   editingId: string | null;
   editingTitle: string;
   /** IDs of currently running tasks */
@@ -25,6 +40,9 @@ export function TaskList({
   tasks,
   currentTaskId,
   loading,
+  hasMore = false,
+  loadingMore = false,
+  onLoadMore,
   editingId,
   editingTitle,
   runningTaskIds = [],
@@ -76,6 +94,12 @@ export function TaskList({
           />
         </div>
       ))}
+
+      {onLoadMore && (
+        <InfiniteScroll hasMore={hasMore} isLoading={loadingMore} next={onLoadMore} threshold={1}>
+          {hasMore && <LoadingIndicator />}
+        </InfiniteScroll>
+      )}
     </div>
   );
 }

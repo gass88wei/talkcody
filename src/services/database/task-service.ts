@@ -40,6 +40,29 @@ export class TaskService {
     return result;
   }
 
+  async getTasksWithPagination(
+    projectId?: string,
+    limit: number = 20,
+    offset: number = 0
+  ): Promise<Task[]> {
+    let sql = 'SELECT * FROM conversations';
+    const params: unknown[] = [];
+    let paramIndex = 1;
+
+    if (projectId) {
+      sql += ` WHERE project_id = $${paramIndex}`;
+      params.push(projectId);
+      paramIndex++;
+    }
+
+    sql += ' ORDER BY updated_at DESC';
+    sql += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    params.push(limit, offset);
+
+    const result = await this.db.select<Task[]>(sql, params);
+    return result;
+  }
+
   async getTaskDetails(taskId: string): Promise<Task | null> {
     const result = await this.db.select<Task[]>('SELECT * FROM conversations WHERE id = $1', [
       taskId,

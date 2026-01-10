@@ -123,16 +123,8 @@ class TaskService {
     try {
       const storedMessages = await databaseService.getMessages(taskId);
       const messages = mapStoredMessagesToUI(storedMessages);
-
       taskStore.setMessages(taskId, messages);
-
-      // LRU: touch cache and evict if needed
-      taskStore.touchMessageCache(taskId);
-      const runningTaskIds = useExecutionStore.getState().getRunningTaskIds();
-      taskStore.evictOldestMessages(runningTaskIds);
-
       logger.info('[TaskService] Messages loaded', { taskId, count: messages.length });
-
       return messages;
     } catch (error) {
       logger.error('[TaskService] Failed to load messages:', error);
@@ -152,9 +144,6 @@ class TaskService {
     // Set as current task
     taskStore.setCurrentTaskId(taskId);
     settingsManager.setCurrentTaskId(taskId);
-
-    // Touch cache for LRU tracking
-    taskStore.touchMessageCache(taskId);
 
     // Load messages if not cached
     const existingMessages = taskStore.getMessages(taskId);
@@ -321,6 +310,46 @@ class TaskService {
     } catch (error) {
       logger.error('[TaskService] Failed to get task details:', error);
       return null;
+    }
+  }
+
+  /**
+   * Load tasks with pagination support
+   */
+  async loadTasksWithPagination(
+    projectId?: string,
+    limit: number = 20,
+    offset: number = 0,
+    replace: boolean = false
+  ): Promise<Task[]> {
+    const taskStore = useTaskStore.getState();
+    taskStore.setLoadingTasks(true);
+    taskStore.setError(null);
+
+    try {
+      const tasks = await databaseService.getTasksWithPagination(projectId, limit, offset);
+
+      if (replace) {
+        taskStore.setTasks(tasks);
+      } else {
+        taskStore.addTasks(tasks);
+      }
+
+      logger.info('[TaskService] Tasks loaded with pagination', {
+        projectId,
+        limit,
+        offset,
+        count: tasks.length,
+        replace,
+      });
+
+      return tasks;
+    } catch (error) {
+      logger.error('[TaskService] Failed to load tasks with pagination:', error);
+      taskStore.setError('Failed to load tasks');
+      throw error;
+    } finally {
+      taskStore.setLoadingTasks(false);
     }
   }
 

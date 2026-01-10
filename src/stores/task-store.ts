@@ -153,9 +153,6 @@ function getTaskListWithCache(
   return list;
 }
 
-// Maximum number of tasks to keep messages cached in memory
-const MAX_CACHED_TASK_MESSAGES = 20;
-
 interface TaskUsageUpdate {
   costDelta?: number;
   inputTokensDelta?: number;
@@ -181,9 +178,6 @@ interface TaskState {
   // Messages (by taskId)
   messages: Map<string, UIMessage[]>;
 
-  // LRU cache tracking (most recent first)
-  messageAccessOrder: string[];
-
   // Loading states
   loadingTasks: boolean;
   loadingMessages: Set<string>;
@@ -204,6 +198,11 @@ interface TaskState {
    * Add a new task to the store
    */
   addTask: (task: Task) => void;
+
+  /**
+   * Add multiple tasks to the store (for pagination)
+   */
+  addTasks: (tasks: Task[]) => void;
 
   /**
    * Update a task
@@ -300,22 +299,6 @@ interface TaskState {
   ) => void;
 
   // ============================================
-  // LRU Cache Actions
-  // ============================================
-
-  /**
-   * Touch message cache - move taskId to front of access order
-   * Call this when messages are accessed or modified
-   */
-  touchMessageCache: (taskId: string) => void;
-
-  /**
-   * Evict oldest cached messages to stay under limit
-   * Skips: currentTaskId, running tasks
-   */
-  evictOldestMessages: (runningTaskIds: string[]) => void;
-
-  // ============================================
   // Loading State Actions
   // ============================================
 
@@ -360,7 +343,6 @@ export const useTaskStore = create<TaskState>()(
       currentTaskId: null,
       runningTaskUsage: new Map(),
       messages: new Map(),
-      messageAccessOrder: [],
       loadingTasks: false,
       loadingMessages: new Set(),
       error: null,
@@ -393,6 +375,20 @@ export const useTaskStore = create<TaskState>()(
           },
           false,
           'addTask'
+        );
+      },
+
+      addTasks: (tasks) => {
+        set(
+          (state) => {
+            const newTasks = new Map(state.tasks);
+            for (const task of tasks) {
+              newTasks.set(task.id, task);
+            }
+            return { tasks: newTasks };
+          },
+          false,
+          'addTasks'
         );
       },
 
@@ -710,12 +706,6 @@ export const useTaskStore = create<TaskState>()(
       },
 
       addNestedToolMessage: (taskId, parentToolCallId, nestedMessage) => {
-        logger.info('[TaskStore] addNestedToolMessage called:', {
-          taskId,
-          parentToolCallId,
-          nestedMessageId: nestedMessage.id,
-        });
-
         set(
           (state) => {
             const messages = state.messages.get(taskId);
@@ -760,53 +750,6 @@ export const useTaskStore = create<TaskState>()(
           },
           false,
           'addNestedToolMessage'
-        );
-      },
-
-      // ============================================
-      // LRU Cache Actions
-      // ============================================
-
-      touchMessageCache: (taskId) => {
-        set(
-          (state) => {
-            const filtered = state.messageAccessOrder.filter((id) => id !== taskId);
-            return { messageAccessOrder: [taskId, ...filtered] };
-          },
-          false,
-          'touchMessageCache'
-        );
-      },
-
-      evictOldestMessages: (runningTaskIds) => {
-        set(
-          (state) => {
-            const protectedIds = new Set(
-              [state.currentTaskId, ...runningTaskIds].filter(Boolean) as string[]
-            );
-
-            // Find evictable tasks (not protected, oldest first)
-            const evictable = [...state.messageAccessOrder]
-              .reverse()
-              .filter((id) => !protectedIds.has(id) && state.messages.has(id));
-
-            const excess = state.messages.size - MAX_CACHED_TASK_MESSAGES;
-            const toEvict = evictable.slice(0, Math.max(0, excess));
-
-            if (toEvict.length === 0) return state;
-
-            const newOrder = state.messageAccessOrder.filter((id) => !toEvict.includes(id));
-            const messagesMap = new Map(state.messages);
-
-            for (const taskId of toEvict) {
-              messagesMap.delete(taskId);
-              logger.info('[TaskStore] Evicted messages for task', { taskId });
-            }
-
-            return { messages: messagesMap, messageAccessOrder: newOrder };
-          },
-          false,
-          'evictOldestMessages'
         );
       },
 

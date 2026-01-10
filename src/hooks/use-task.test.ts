@@ -33,7 +33,6 @@ const resetStores = () => {
     tasks: new Map(),
     runningTaskUsage: new Map(),
     messages: new Map(),
-    messageAccessOrder: [],
     loadingMessages: new Set(),
     currentTaskId: null,
   });

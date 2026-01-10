@@ -88,14 +88,30 @@ impl LspRegistry {
         language: String,
         root_path: String,
     ) {
-        let key = (language.clone(), root_path.clone());
+        if !self.is_creation_pending(&language, &root_path) {
+            log::warn!(
+                "finish_creation called without reservation for {} at {}",
+                language,
+                root_path
+            );
+        }
 
-        // Remove from pending
+        let key = (language.clone(), root_path.clone());
         self.pending_creations.remove(&key);
 
-        // Register the server
-        self.server_index.insert(key, server_id.clone());
-        self.servers.insert(server_id, server);
+        if self.exists(&language, &root_path) {
+            if let Some(existing_id) = self.server_index.remove(&key) {
+                log::warn!(
+                    "Replacing existing LSP server {} for {} at {}",
+                    existing_id,
+                    language,
+                    root_path
+                );
+                self.servers.remove(&existing_id);
+            }
+        }
+
+        self.insert(server_id, server, language, root_path);
     }
 
     /// Cancel a reserved creation (e.g., if server spawn failed).

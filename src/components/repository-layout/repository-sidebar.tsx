@@ -94,6 +94,9 @@ export const RepositorySidebar = memo(function RepositorySidebar({
   const {
     tasks,
     loading: tasksLoading,
+    loadingMore,
+    hasMore,
+    loadMoreTasks,
     editingId,
     editingTitle,
     setEditingTitle,
@@ -274,6 +277,9 @@ export const RepositorySidebar = memo(function RepositorySidebar({
                   editingId={editingId}
                   editingTitle={editingTitle}
                   loading={tasksLoading}
+                  hasMore={hasMore}
+                  loadingMore={loadingMore}
+                  onLoadMore={() => loadMoreTasks(currentProjectId || undefined)}
                   getWorktreeForTask={getWorktreeForTask}
                   onCancelEdit={cancelEditing}
                   onTaskSelect={(taskId) => {
