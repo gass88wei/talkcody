@@ -1,5 +1,6 @@
 ---
 title: Custom Tools 自定义工具
+sidebarTitle: 自定义 Tools
 description: Custom Tools 允许您创建自定义功能扩展，以满足特定的业务需求。配合 Tool Playground，您可以快速开发、测试和部署自定义工具。
 icon: Hammer
 ---
@@ -9,14 +10,33 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 
 ## 什么是 Custom Tool？
 
-
-
 Custom Tool（自定义工具）是一种可扩展的功能模块，允许您创建超越内置工具和 MCP 服务器的专业能力。通过自定义工具，您可以：
 
 - **封装业务逻辑**：将复杂的业务流程封装为可复用的工具
 - **集成第三方 API**：连接任何 RESTful API 或 Web 服务
 - **数据处理**：实现特定的数据转换、分析和处理逻辑
 - **自定义 UI 渲染**：为工具结果提供丰富的可视化展示
+
+## Custom Tool vs MCP vs Skills
+
+| 特性 | Custom Tool | MCP 服务器 | Skills |
+|------|-------------|------------|--------|
+| **UI 自定义** | ✅ 完全支持 | ❌ 不支持 | ❌ 不支持 |
+| **细粒度权限控制** | ✅ 声明式权限（fs/net/command） | ⚠️ 服务器级别控制 | ⚠️ 全局开关 |
+| **参数验证** | ✅ Zod schema 严格验证 | ❌ MCP 协议限制 | ❌ 无结构化参数 |
+| **开发语言** | TypeScript/React | 任何语言 | Markdown + 可选脚本 |
+| **执行环境** | 沙箱环境 | 独立进程 | 文件系统 |
+| **运行时编译** | ✅ 支持（Playground） | ❌ 需要重启 | ✅ 热加载 |
+| **分发方式** | 文件复制 | npm/独立安装 | GitHub/市场 |
+| **适用场景** | 需要自定义 UI 和精细控制的工具 | 集成第三方服务和协议 | 提示词和工作流增强 |
+
+<Callout type="info">
+**Custom Tool 的两大核心优势**：
+
+1. **自定义 UI**：通过 `renderToolDoing` 和 `renderToolResult` 函数，您可以为工具创建完全自定义的 UI 组件，包括图表、表格、交互式控件等，让工具执行过程和结果更加直观。
+
+2. **细粒度控制**：使用 Zod schema 进行严格的参数验证，声明式权限系统（fs/net/command）确保工具只能访问必要的资源，提供更高的安全性和可控性。
+</Callout>
 
 ## 工具目录结构
 
@@ -262,7 +282,6 @@ Tool Playground（工具测试场）是内置的开发和测试环境，让您�
 - 实时编译反馈
 - 导入路径智能提示
 
-![Code Editor](https://cdn.talkcody.com/images/playground-editor.png)
 </Tab>
 
 <Tab value="参数面板">
@@ -272,7 +291,6 @@ Tool Playground（工具测试场）是内置的开发和测试环境，让您�
 - 参数预设保存/加载
 - 默认值和可选标记显示
 
-![Parameters](https://cdn.talkcody.com/images/playground-parameters.png)
 </Tab>
 
 <Tab value="结果面板">
@@ -282,7 +300,6 @@ Tool Playground（工具测试场）是内置的开发和测试环境，让您�
 - 执行日志
 - 结果复制/下载
 
-![Results](https://cdn.talkcody.com/images/playground-results.png)
 </Tab>
 
 <Tab value="历史记录">
@@ -292,7 +309,6 @@ Tool Playground（工具测试场）是内置的开发和测试环境，让您�
 - 快速重放历史执行
 - 搜索和筛选历史记录
 
-![History](https://cdn.talkcody.com/images/playground-history.png)
 </Tab>
 </Tabs>
 
@@ -381,9 +397,24 @@ export default toolHelper({
 | **Timeout** | 最大执行时间（毫秒） | 30000ms |
 | **Mock Mode** | 模拟网络请求返回测试数据 | 关闭 |
 
+### 安装自定义工具
+
+完成工具开发和测试后，您可以直接在 Tool Playground 中安装自定义工具：
+
+1. 确保工具已成功编译（状态显示为 `ready`）
+2. 点击右上角 **安装** 按钮
+3. 工具将自动保存到以下目录之一：
+   - 工作区 `.talkcody/tools/` 目录（如果有工作区）
+   - 用户目录 `~/.talkcody/tools/`（无工作区时）
+4. 工具保存后会自动刷新并立即可用
+
+<Callout type="success">
+安装成功后，您可以在 **Agents 设置** 中找到并启用这个自定义工具，供 AI 智能体使用。
+</Callout>
+
 ### 保存工具到文件
 
-完成工具开发后，您可以：
+完成工具开发后，您也可以：
 
 1. 点击 **保存** 按钮
 2. 选择保存位置（工作区 `.talkcody/tools` 目录）
@@ -563,18 +594,6 @@ const argsSchema = z.object({
 });
 ```
 
-### 3. 性能优化
-
-- 避免在 `execute` 中进行长时间阻塞操作
-- 使用流式处理大文件或数据
-- 设置合理的超时时间
-
-### 4. 安全性
-
-- 不要在工具中硬编码敏感信息（如 API Key）
-- 验证所有外部输入
-- 使用最小权限原则声明所需权限
-
 ## 常见问题
 
 ### Q: 工具加载失败怎么办？
@@ -597,13 +616,6 @@ const argsSchema = z.object({
 不需要。工具文件保存后会自动重新加载。如果工具未更新，请尝试：
 1. 点击设置中的"刷新工具"
 2. 检查工具目录路径是否正确
-
-### Q: 支持 TypeScript 类型提示吗？
-
-是的。在 Tool Playground 中编写时，Monaco 编辑器会提供：
-- 内置依赖的类型提示（React、Zod 等）
-- 项目内部模块的类型提示
-- 自定义工具定义的类型推断
 
 ### Q: 如何分享自定义工具？
 

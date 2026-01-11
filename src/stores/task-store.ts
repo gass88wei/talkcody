@@ -141,7 +141,7 @@ function upsertTasks(existing: Task[], incoming: Task[]): Task[] {
   const indexById = new Map<string, number>();
 
   for (let i = 0; i < existing.length; i += 1) {
-    indexById.set(existing[i].id, i);
+    indexById.set(existing[i]!.id, i);
   }
 
   for (const task of incoming) {
@@ -415,7 +415,7 @@ export const useTaskStore = create<TaskState>()(
             if (index < 0) return state;
 
             const nextTasks = [...state.tasks];
-            const task = nextTasks[index];
+            const task = nextTasks[index]!;
             nextTasks[index] = { ...task, ...updates };
 
             return { tasks: sortTasksByTimeline(nextTasks) };
@@ -493,7 +493,7 @@ export const useTaskStore = create<TaskState>()(
             if (!delta) return state;
 
             const nextTasks = [...state.tasks];
-            const task = nextTasks[index];
+            const task = nextTasks[index]!;
             nextTasks[index] = {
               ...task,
               cost: task.cost + delta.costDelta,
@@ -532,7 +532,7 @@ export const useTaskStore = create<TaskState>()(
             if (index < 0) return state;
 
             const nextTasks = [...state.tasks];
-            const task = nextTasks[index];
+            const task = nextTasks[index]!;
             const existingSettings: TaskSettings = task.settings ? JSON.parse(task.settings) : {};
             nextTasks[index] = {
               ...task,
@@ -585,7 +585,7 @@ export const useTaskStore = create<TaskState>()(
             const index = findTaskIndex(state.tasks, taskId);
             if (index >= 0 && message.role === 'user') {
               const nextTasks = [...state.tasks];
-              const task = nextTasks[index];
+              const task = nextTasks[index]!;
               nextTasks[index] = {
                 ...task,
                 updated_at: Date.now(),
@@ -810,7 +810,7 @@ export const useTaskStore = create<TaskState>()(
         const index = findTaskIndex(get().tasks, taskId);
         if (index < 0) return undefined;
 
-        const task = get().tasks[index];
+        const task = get().tasks[index]!;
         return mergeTaskUsage(taskId, task, get().runningTaskUsage.get(taskId));
       },
 

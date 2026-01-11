@@ -24,7 +24,7 @@ export const CHANGELOG_DATA: ChangelogEntry[] = [
     date: '2026-01-11',
     en: {
       added: [
-        'Custom Tools Support (Experimental): Added Custom Tools and Custom Tools Playground, allowing users to define custom AI tools with core capability to customize UI.',
+        'Custom Tools Support (Experimental): Added Custom Tools and Custom Tools Playground, allowing users to define custom AI tools with core capability to customize UI. For details, refer to [Custom Tools](/en/docs/features/custom-tools)',
         'Edit Auto-Approval: Can be enabled in settings, eliminating the need to wait for approval when modifying files.',
         'Global file search now displays recently opened files.',
         'When using multiple windows, the Project name is used as the window title.',
@@ -40,7 +40,7 @@ export const CHANGELOG_DATA: ChangelogEntry[] = [
     },
     zh: {
       added: [
-        '支持自定义工具（实验版本）：新增 Custom Tools 和 Custom Tools Playground，支持用户自定义 AI 工具，核心能力是可以自定义 UI',
+        '支持自定义工具（实验版本）：新增 Custom Tools 和 Custom Tools Playground，支持用户自定义 AI 工具，核心能力是可以自定义 UI。详情参考 [自定义工具](/zh/docs/features/custom-tools)',
         'Edit 自动批准：可在设置中开启，不需要等待文件修改时再进行审批',
         '全局文件搜索显示最近打开的文件',
         '多窗口时，将 Project name 作为窗口标题',
